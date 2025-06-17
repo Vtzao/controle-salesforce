@@ -129,20 +129,6 @@
                 </div>
             </div>
 
-             <!-- Seção de IA Gemini -->
-            <div id="ai-section" class="hidden my-6 p-4 bg-indigo-50 border border-indigo-200 rounded-lg shadow-sm">
-                <h3 class="text-lg font-semibold text-indigo-900 mb-3">✨ Assistente de IA</h3>
-                <div class="flex flex-wrap gap-4 items-end">
-                    <div>
-                        <label for="role-suggestion-select" class="block text-sm font-medium text-indigo-800">Sugerir habilidades para o Papel (Role):</label>
-                        <select id="role-suggestion-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"></select>
-                    </div>
-                    <button id="get-suggestions-button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        Sugerir
-                    </button>
-                </div>
-            </div>
-
             <!-- Seção de Busca e Ações -->
             <div class="mb-4 p-4 bg-white rounded-lg shadow">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -252,14 +238,22 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, collection, query, writeBatch, updateDoc, FieldPath } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         window.addEventListener('DOMContentLoaded', () => {
-            // --- Configuração e Estado ---
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'salesforce-dashboard-default';
+            // --- COLE SUAS CHAVES DO FIREBASE AQUI ---
+            const firebaseConfig = {
+                apiKey: "<!-- COLE SUA CHAVE DE API AQUI (ÚNICA DO SEU APP) -->",
+                authDomain: "tabelao-c1429.firebaseapp.com",
+                projectId: "tabelao-c1429",
+                storageBucket: "tabelao-c1429.appspot.com",
+                messagingSenderId: "932558127402",
+                appId: "<!-- COLE SEU APP ID AQUI (ÚNICO DO SEU APP) -->"
+            };
 
+            // --- Configuração e Estado ---
+            const appId = 'salesforce-dashboard-vitor';
             let db, auth, userId;
             let colaboradores = [];
             let funcionalidades = new Set();
@@ -293,9 +287,6 @@
             const bulkFuncSelect = document.getElementById('bulk-action-functionality');
             const bulkStatusSelect = document.getElementById('bulk-action-status');
             const bulkApplyButton = document.getElementById('bulk-action-apply');
-            const aiSection = document.getElementById('ai-section');
-            const roleSuggestionSelect = document.getElementById('role-suggestion-select');
-            const getSuggestionsButton = document.getElementById('get-suggestions-button');
             
             const modal = document.getElementById('modal');
             const modalTitle = document.getElementById('modal-title');
@@ -352,88 +343,6 @@
                 if(modal) modal.classList.add('hidden');
             }
             
-            async function callGemini(prompt) {
-                const apiKey = ""; 
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-                const payload = { contents: [{ parts: [{ text: prompt }] }] };
-
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
-                    const result = await response.json();
-                    if (result.candidates && result.candidates.length > 0) {
-                        return result.candidates[0].content.parts[0].text;
-                    }
-                    throw new Error("Resposta da API inválida.");
-                } catch (error) {
-                    console.error("Erro na chamada Gemini:", error);
-                    showModal("Erro de IA", "Não foi possível obter uma resposta do assistente de IA. Verifique o console para mais detalhes.");
-                    return null;
-                }
-            }
-            
-            async function generateTrainingPlan(colaborador) {
-                const pendingFuncs = Object.entries(colaborador.funcionalidades || {})
-                    .filter(([_, status]) => status === 'Pendente')
-                    .map(([func, _]) => func);
-
-                if (pendingFuncs.length === 0) {
-                    showModal("Tudo em Dia!", `${colaborador.nome} não possui treinamentos pendentes.`);
-                    return;
-                }
-                
-                showModal("✨ Gerando Plano...", '<div class="flex justify-center items-center h-24"><div class="loader"></div></div>', 'Aguarde', false);
-                
-                const prompt = `Crie um plano de treinamento conciso e prático para um colaborador com o profile de "${colaborador.profile}" e papel (role) de "${colaborador.role}" aprender as seguintes funcionalidades do Salesforce: ${pendingFuncs.join(', ')}. O plano deve ser uma lista de passos claros e acionáveis, em português do Brasil. Use hífens ou asteriscos para os itens da lista.`;
-
-                const plan = await callGemini(prompt);
-                if (plan) {
-                     const formattedPlan = '<ul>' + plan.split('\n').map(line => line.trim().length > 0 ? `<li class="mt-2">${line.replace(/^\* |^- /, '')}</li>` : '').join('') + '</ul>';
-                    showModal(`Plano para ${colaborador.nome}`, `<p class="text-base">${formattedPlan}</p>`);
-                } else {
-                     hideModal(); // Hide if Gemini call fails
-                }
-            }
-            
-            async function getFunctionalitySuggestions() {
-                if(!roleSuggestionSelect) return;
-                const role = roleSuggestionSelect.value;
-                if (!role) {
-                    showModal("Ação Inválida", "Por favor, selecione um Papel (Role) para obter sugestões.");
-                    return;
-                }
-    
-                showModal("✨ Buscando Sugestões...", '<div class="flex justify-center items-center h-24"><div class="loader"></div></div>', 'Aguarde', false);
-    
-                const prompt = `Com base no Papel (Role) de "${role}" em uma empresa que usa Salesforce, sugira 3 funcionalidades ou habilidades importantes que essa pessoa poderia aprender. Responda APENAS com os nomes das funcionalidades, separados por vírgula. Exemplo: "Apex Básico, Fluxos de Tela, Relatórios Avançados".`;
-                
-                const suggestionsText = await callGemini(prompt);
-                if (suggestionsText) {
-                    const suggestions = suggestionsText.split(',').map(s => s.trim());
-                    let suggestionsHtml = '<p class="mb-4">Aqui estão algumas sugestões. Clique para adicionar à lista de rastreamento:</p><ul class="space-y-2">';
-                    suggestions.forEach(sugg => {
-                        suggestionsHtml += `<li class="flex justify-between items-center"><span class="font-medium">${sugg}</span><button data-func-name="${sugg}" class="add-suggestion-btn text-sm bg-green-100 text-green-800 hover:bg-green-200 px-2 py-1 rounded-md">Adicionar</button></li>`;
-                    });
-                    suggestionsHtml += '</ul>';
-                    showModal(`Sugestões para ${role}`, suggestionsHtml, "Fechar");
-    
-                    document.querySelectorAll('.add-suggestion-btn').forEach(button => {
-                        button.addEventListener('click', (e) => {
-                            const funcName = e.target.getAttribute('data-func-name');
-                            addFunctionality(funcName);
-                            e.target.textContent = "Adicionado!";
-                            e.target.disabled = true;
-                            e.target.classList.remove('bg-green-100', 'hover:bg-green-200');
-                            e.target.classList.add('bg-gray-200', 'text-gray-500');
-                        });
-                    });
-                }
-            }
-
             async function updateStatus(colaboradorId, func, newStatus) {
                 if (!userId) return;
                 const docRef = doc(db, 'artifacts', appId, 'users', userId, 'colaboradores', colaboradorId);
@@ -659,7 +568,6 @@
                     { key: 'profile', text: 'Profile', width: PROFILE_WIDTH, isSortable: true },
                     { key: 'role', text: 'Role', width: ROLE_WIDTH, isSortable: true },
                     ...sortedFuncionalidades.map(f => ({ key: f, text: f, isSortable: true })),
-                    { key: 'actions', text: 'Ações', isSortable: false }
                 ];
 
                 const leftOffsets = [0, CHECKBOX_WIDTH, CHECKBOX_WIDTH + NOME_WIDTH, CHECKBOX_WIDTH + NOME_WIDTH + PROFILE_WIDTH];
@@ -710,7 +618,6 @@
                             { type: 'data', text: colaborador.profile, key: 'profile' },
                             { type: 'data', text: colaborador.role, key: 'role' },
                             ...sortedFuncionalidades.map(f => ({ type: 'select', func: f, status: colaborador.funcionalidades?.[f] || 'Pendente' })),
-                            { type: 'actions' }
                         ];
 
                         cells.forEach((cell, index) => {
@@ -759,12 +666,6 @@
                                     setSelectStyle();
                                 });
                                 td.appendChild(select);
-                            } else if (cell.type === 'actions') {
-                                const planButton = document.createElement('button');
-                                planButton.innerHTML = '✨ Gerar Plano';
-                                planButton.className = 'text-indigo-600 hover:text-indigo-900 font-medium';
-                                planButton.onclick = () => generateTrainingPlan(colaborador);
-                                td.appendChild(planButton);
                             }
                             tr.appendChild(td);
                         });
@@ -814,13 +715,18 @@
 
             // --- Funções de Inicialização e Handlers ---
             async function initializeAppAndData() {
+                if(!firebaseConfig.apiKey || firebaseConfig.apiKey.includes("COLE SUA CHAVE")) {
+                    showModal("Erro de Configuração", "As chaves de configuração do Firebase não foram encontradas. Por favor, adicione seu objeto `firebaseConfig` no código.");
+                    return;
+                }
+
                 try {
                     const app = initializeApp(firebaseConfig);
                     db = getFirestore(app);
                     auth = getAuth(app);
                 } catch (error) {
                     console.error("Erro ao inicializar Firebase:", error);
-                    showModal("Erro de Conexão", "Não foi possível conectar ao banco de dados.");
+                    showModal("Erro de Conexão", "Não foi possível conectar ao banco de dados. Verifique a configuração do Firebase.");
                     return;
                 }
                 onAuthStateChanged(auth, user => {
@@ -910,11 +816,7 @@
 
             async function authenticateUser() {
                 try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
+                   await signInAnonymously(auth);
                 } catch (error) {
                     console.error("Erro na autenticação:", error);
                     showModal("Erro de Autenticação", `Falha ao iniciar a sessão: ${error.message}`);
@@ -991,7 +893,6 @@
             if(fileUpload) fileUpload.addEventListener('change', handleImport);
             if(exportButton) exportButton.addEventListener('click', handleExport);
             if(addFuncButton) addFuncButton.addEventListener('click', () => addFunctionality());
-            if(getSuggestionsButton) getSuggestionsButton.addEventListener('click', getFunctionalitySuggestions);
             if(copyIdButton) copyIdButton.addEventListener('click', copyUserIdToClipboard);
             if(searchInput) searchInput.addEventListener('input', applySortAndFilter);
             if(bulkApplyButton) bulkApplyButton.addEventListener('click', applyBulkAction);
