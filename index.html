@@ -107,4 +107,903 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div class="flex flex-wrap gap-3 items-center p-4 bg-white rounded-lg shadow">
                      <label for="file-upload" class="cursor-pointer inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L6.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                        Importar
+                    </label>
+                    <input id="file-upload" type="file" class="hidden" accept=".xlsx, .xls, .csv">
+                    
+                    <button id="export-button" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        Exportar
+                    </button>
+                </div>
+
+                <div class="p-4 bg-white rounded-lg shadow">
+                     <label for="new-functionality-input" class="block text-sm font-medium text-gray-700">Adicionar nova funcionalidade</label>
+                     <div class="mt-1 flex gap-2">
+                        <input type="text" id="new-functionality-input" placeholder="Ex: Apex Triggers" class="flex-grow shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                        <button id="add-functionality-button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Adicionar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+             <!-- Seção de IA Gemini -->
+            <div id="ai-section" class="hidden my-6 p-4 bg-indigo-50 border border-indigo-200 rounded-lg shadow-sm">
+                <h3 class="text-lg font-semibold text-indigo-900 mb-3">✨ Assistente de IA</h3>
+                <div class="flex flex-wrap gap-4 items-end">
+                    <div>
+                        <label for="role-suggestion-select" class="block text-sm font-medium text-indigo-800">Sugerir habilidades para o Papel (Role):</label>
+                        <select id="role-suggestion-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"></select>
+                    </div>
+                    <button id="get-suggestions-button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Sugerir
+                    </button>
+                </div>
+            </div>
+
+            <!-- Seção de Busca e Ações -->
+            <div class="mb-4 p-4 bg-white rounded-lg shadow">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="md:col-span-2">
+                        <label for="search-input" class="block text-sm font-medium text-gray-700">Buscar por Nome</label>
+                        <input type="text" id="search-input" placeholder="Digite o nome do colaborador..." class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção de Ações em Massa (inicialmente oculta) -->
+            <div id="bulk-action-container" class="hidden mb-4 p-4 bg-indigo-100 border border-indigo-200 rounded-lg shadow-sm">
+                <div class="flex flex-wrap items-center gap-4">
+                    <span id="selection-count" class="font-medium text-indigo-800"></span>
+                    <select id="bulk-action-functionality" class="w-48 text-sm border-gray-300 rounded-md"></select>
+                    <select id="bulk-action-status" class="w-48 text-sm border-gray-300 rounded-md"></select>
+                    <button id="bulk-action-apply" class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">Aplicar</button>
+                </div>
+            </div>
+            
+            <div id="auth-status-container" class="mb-4 p-3 bg-indigo-100 text-indigo-800 rounded-lg text-sm flex items-center justify-between hidden">
+                <span id="auth-status-text">Carregando sessão...</span>
+                <button id="copy-id-button" class="ml-4 px-3 py-1 bg-indigo-600 text-white text-xs font-semibold rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                    Copiar ID
+                </button>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="table-container">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50 sticky top-0 z-20">
+                            <tr id="table-header"></tr>
+                        </thead>
+                        <tbody id="table-body" class="bg-white divide-y divide-gray-200">
+                            <tr id="initial-message-row">
+                                <td colspan="10" class="px-6 py-12 text-center text-gray-500">Nenhum dado importado. Por favor, importe uma planilha para começar.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Conteúdo da Página de Análise -->
+        <div id="analytics-page" class="hidden">
+            <div id="analytics-section" class="p-4 bg-white rounded-lg shadow">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">Análise Gráfica</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label for="analytics-profile-filter" class="block text-sm font-medium text-gray-700">Filtrar por Profile</label>
+                        <select id="analytics-profile-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"></select>
+                    </div>
+                    <div>
+                        <label for="analytics-role-filter" class="block text-sm font-medium text-gray-700">Filtrar por Role</label>
+                        <select id="analytics-role-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Filtrar Funcionalidades</label>
+                        <div id="analytics-functionality-filter" class="mt-1 p-2 border border-gray-300 rounded-md max-h-32 overflow-y-auto space-y-1">
+                            <!-- Checkboxes serão inseridos aqui -->
+                        </div>
+                    </div>
+                </div>
+                <div id="charts-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
+                    <!-- Gráficos serão inseridos aqui -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+    
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-12">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <div class="text-center text-gray-600">
+                <h4 class="text-lg font-semibold text-gray-900">Contato - Equipe Salesforce Organnact</h4>
+                <p class="mt-2 text-base">
+                    Vitor Almeida - Analista Salesforce
+                </p>
+                <div class="mt-2 text-sm space-x-4">
+                    <span><strong>Celular/Whatsapp:</strong> +55 (41) 98870-8878</span>
+                    <span class="border-l border-gray-300 pl-4">
+                        <strong>E-mail:</strong> 
+                        <a href="mailto:vitor.almeida@organnact.com" class="text-indigo-600 hover:text-indigo-700 hover:underline">vitor.almeida@organnact.com</a>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal Genérico -->
+    <div id="modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                 <h3 id="modal-title" class="text-xl font-bold text-gray-900"></h3>
+                 <button id="modal-close-button" class="text-gray-400 hover:text-gray-600">&times;</button>
+            </div>
+            <div id="modal-body" class="text-sm text-gray-600 min-h-[100px]"></div>
+            <div class="mt-6 flex justify-end">
+                <button id="modal-action-button" class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, writeBatch, updateDoc, FieldPath } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // --- Configuração e Estado ---
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'salesforce-dashboard-default';
+
+            let db, auth, userId;
+            let colaboradores = [];
+            let funcionalidades = new Set();
+            let sortState = { key: 'nome', direction: 'asc' };
+            let selectedRows = new Set();
+            let chartInstances = {};
+            const STATUS_OPTIONS = ['Pendente', 'Concluído', 'Não se aplica'];
+            const NOME_WIDTH = 180;
+            const PROFILE_WIDTH = 150;
+            const ROLE_WIDTH = 150;
+            const CHECKBOX_WIDTH = 60;
+
+            // --- Elementos do DOM ---
+            const fileUpload = document.getElementById('file-upload');
+            const exportButton = document.getElementById('export-button');
+            const newFuncInput = document.getElementById('new-functionality-input');
+            const addFuncButton = document.getElementById('add-functionality-button');
+            const searchInput = document.getElementById('search-input');
+            const tableHeader = document.getElementById('table-header');
+            const tableBody = document.getElementById('table-body');
+            const authStatusContainer = document.getElementById('auth-status-container');
+            const authStatusText = document.getElementById('auth-status-text');
+            const copyIdButton = document.getElementById('copy-id-button');
+            const analyticsSection = document.getElementById('analytics-section');
+            const chartsContainer = document.getElementById('charts-container');
+            const analyticsProfileFilter = document.getElementById('analytics-profile-filter');
+            const analyticsRoleFilter = document.getElementById('analytics-role-filter');
+            const analyticsFunctionalityFilter = document.getElementById('analytics-functionality-filter');
+            const bulkActionContainer = document.getElementById('bulk-action-container');
+            const selectionCount = document.getElementById('selection-count');
+            const bulkFuncSelect = document.getElementById('bulk-action-functionality');
+            const bulkStatusSelect = document.getElementById('bulk-action-status');
+            const bulkApplyButton = document.getElementById('bulk-action-apply');
+            const aiSection = document.getElementById('ai-section');
+            const roleSuggestionSelect = document.getElementById('role-suggestion-select');
+            const getSuggestionsButton = document.getElementById('get-suggestions-button');
+            
+            const modal = document.getElementById('modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            const modalCloseButton = document.getElementById('modal-close-button');
+            const modalActionButton = document.getElementById('modal-action-button');
+            
+            const navMainButton = document.getElementById('nav-main');
+            const navAnalyticsButton = document.getElementById('nav-analytics');
+            const mainPanelPage = document.getElementById('main-panel-page');
+            const analyticsPage = document.getElementById('analytics-page');
+
+            // --- Funções de Navegação ---
+            function showPage(pageId) {
+                if(mainPanelPage) mainPanelPage.classList.add('hidden');
+                if(analyticsPage) analyticsPage.classList.add('hidden');
+                if(navMainButton) {
+                    navMainButton.classList.remove('border-indigo-500', 'text-indigo-600');
+                    navMainButton.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                }
+                if(navAnalyticsButton){
+                     navAnalyticsButton.classList.remove('border-indigo-500', 'text-indigo-600');
+                    navAnalyticsButton.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                }
+               
+
+                if (pageId === 'main') {
+                    if(mainPanelPage) mainPanelPage.classList.remove('hidden');
+                    if(navMainButton){
+                       navMainButton.classList.add('border-indigo-500', 'text-indigo-600');
+                       navMainButton.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    }
+                } else if (pageId === 'analytics') {
+                    if(analyticsPage) analyticsPage.classList.remove('hidden');
+                    if(navAnalyticsButton){
+                        navAnalyticsButton.classList.add('border-indigo-500', 'text-indigo-600');
+                        navAnalyticsButton.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    }
+                    updateAnalytics();
+                }
+            }
+
+            // --- Funções do Modal ---
+            function showModal(title, content, actionButtonText = 'OK', isActionable = true) {
+                if(!modal || !modalTitle || !modalBody || !modalActionButton) return;
+                modalTitle.textContent = title;
+                modalBody.innerHTML = content;
+                modalActionButton.textContent = actionButtonText;
+                modalActionButton.onclick = hideModal;
+                modalActionButton.disabled = !isActionable;
+                modal.classList.remove('hidden');
+            }
+            function hideModal() {
+                if(modal) modal.classList.add('hidden');
+            }
+            
+            async function callGemini(prompt) {
+                const apiKey = ""; 
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                    const result = await response.json();
+                    if (result.candidates && result.candidates.length > 0) {
+                        return result.candidates[0].content.parts[0].text;
+                    }
+                    throw new Error("Resposta da API inválida.");
+                } catch (error) {
+                    console.error("Erro na chamada Gemini:", error);
+                    showModal("Erro de IA", "Não foi possível obter uma resposta do assistente de IA. Verifique o console para mais detalhes.");
+                    return null;
+                }
+            }
+            
+            async function generateTrainingPlan(colaborador) {
+                const pendingFuncs = Object.entries(colaborador.funcionalidades || {})
+                    .filter(([_, status]) => status === 'Pendente')
+                    .map(([func, _]) => func);
+
+                if (pendingFuncs.length === 0) {
+                    showModal("Tudo em Dia!", `${colaborador.nome} não possui treinamentos pendentes.`);
+                    return;
+                }
+                
+                showModal("✨ Gerando Plano...", '<div class="flex justify-center items-center h-24"><div class="loader"></div></div>', 'Aguarde', false);
+                
+                const prompt = `Crie um plano de treinamento conciso e prático para um colaborador com o profile de "${colaborador.profile}" e papel (role) de "${colaborador.role}" aprender as seguintes funcionalidades do Salesforce: ${pendingFuncs.join(', ')}. O plano deve ser uma lista de passos claros e acionáveis, em português do Brasil. Use hífens ou asteriscos para os itens da lista.`;
+
+                const plan = await callGemini(prompt);
+                if (plan) {
+                     const formattedPlan = '<ul>' + plan.split('\n').map(line => line.trim().length > 0 ? `<li class="mt-2">${line.replace(/^\* |^- /, '')}</li>` : '').join('') + '</ul>';
+                    showModal(`Plano para ${colaborador.nome}`, `<p class="text-base">${formattedPlan}</p>`);
+                } else {
+                     hideModal(); // Hide if Gemini call fails
+                }
+            }
+            
+            async function getFunctionalitySuggestions() {
+                if(!roleSuggestionSelect) return;
+                const role = roleSuggestionSelect.value;
+                if (!role) {
+                    showModal("Ação Inválida", "Por favor, selecione um Papel (Role) para obter sugestões.");
+                    return;
+                }
+    
+                showModal("✨ Buscando Sugestões...", '<div class="flex justify-center items-center h-24"><div class="loader"></div></div>', 'Aguarde', false);
+    
+                const prompt = `Com base no Papel (Role) de "${role}" em uma empresa que usa Salesforce, sugira 3 funcionalidades ou habilidades importantes que essa pessoa poderia aprender. Responda APENAS com os nomes das funcionalidades, separados por vírgula. Exemplo: "Apex Básico, Fluxos de Tela, Relatórios Avançados".`;
+                
+                const suggestionsText = await callGemini(prompt);
+                if (suggestionsText) {
+                    const suggestions = suggestionsText.split(',').map(s => s.trim());
+                    let suggestionsHtml = '<p class="mb-4">Aqui estão algumas sugestões. Clique para adicionar à lista de rastreamento:</p><ul class="space-y-2">';
+                    suggestions.forEach(sugg => {
+                        suggestionsHtml += `<li class="flex justify-between items-center"><span class="font-medium">${sugg}</span><button data-func-name="${sugg}" class="add-suggestion-btn text-sm bg-green-100 text-green-800 hover:bg-green-200 px-2 py-1 rounded-md">Adicionar</button></li>`;
+                    });
+                    suggestionsHtml += '</ul>';
+                    showModal(`Sugestões para ${role}`, suggestionsHtml, "Fechar");
+    
+                    document.querySelectorAll('.add-suggestion-btn').forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            const funcName = e.target.getAttribute('data-func-name');
+                            addFunctionality(funcName);
+                            e.target.textContent = "Adicionado!";
+                            e.target.disabled = true;
+                            e.target.classList.remove('bg-green-100', 'hover:bg-green-200');
+                            e.target.classList.add('bg-gray-200', 'text-gray-500');
+                        });
+                    });
+                }
+            }
+
+            async function updateStatus(colaboradorId, func, newStatus) {
+                if (!userId) return;
+                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'colaboradores', colaboradorId);
+                try {
+                    const fieldPath = new FieldPath('funcionalidades', func);
+                    await updateDoc(docRef, fieldPath, newStatus );
+                } catch (error) {
+                    console.error("Erro ao atualizar status:", error);
+                    showModal("Erro", "Não foi possível salvar a alteração.");
+                }
+            }
+
+            function updateAnalytics() {
+                if (!colaboradores.length || !analyticsSection || !analyticsProfileFilter || !analyticsRoleFilter || !analyticsFunctionalityFilter) {
+                    if(analyticsSection) analyticsSection.classList.add('hidden');
+                    return;
+                }
+                analyticsSection.classList.remove('hidden');
+
+                const selectedProfile = analyticsProfileFilter.value;
+                const selectedRole = analyticsRoleFilter.value;
+                const selectedFunctionalities = Array.from(analyticsFunctionalityFilter.querySelectorAll('input:checked')).map(cb => cb.value);
+
+                let filteredColaboradores = colaboradores.filter(c => {
+                    const profileMatch = !selectedProfile || c.profile === selectedProfile;
+                    const roleMatch = !selectedRole || c.role === selectedRole;
+                    return profileMatch && roleMatch;
+                });
+
+                const analyticsData = {};
+                (selectedFunctionalities.length > 0 ? selectedFunctionalities : Array.from(funcionalidades)).forEach(func => {
+                    analyticsData[func] = { 'Concluído': 0, 'Pendente': 0 };
+                });
+
+                filteredColaboradores.forEach(c => {
+                    Object.entries(c.funcionalidades || {}).forEach(([func, status]) => {
+                        if (analyticsData[func] && (status === 'Concluído' || status === 'Pendente')) {
+                            analyticsData[func][status]++;
+                        }
+                    });
+                });
+
+                renderCharts(analyticsData);
+            }
+
+            function renderCharts(data) {
+                if(!chartsContainer) return;
+                chartsContainer.innerHTML = '';
+                Object.values(chartInstances).forEach(chart => chart.destroy());
+                chartInstances = {};
+
+                if (Object.keys(data).length === 0) {
+                    chartsContainer.innerHTML = '<p class="text-gray-500 col-span-full text-center">Nenhuma funcionalidade selecionada para exibir.</p>';
+                    return;
+                }
+
+                for (const func in data) {
+                    const chartData = data[func];
+                    const canvasContainer = document.createElement('div');
+                    canvasContainer.className = 'p-4 border rounded-lg bg-gray-50';
+                    const canvas = document.createElement('canvas');
+                    canvasContainer.appendChild(canvas);
+                    chartsContainer.appendChild(canvasContainer);
+
+                    chartInstances[func] = new Chart(canvas, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Concluído', 'Pendente'],
+                            datasets: [{
+                                label: 'Status',
+                                data: [chartData['Concluído'], chartData['Pendente']],
+                                backgroundColor: ['#22c55e', '#facc15'],
+                                borderColor: ['#16a34a', '#eab308'],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                title: {
+                                    display: true,
+                                    text: func,
+                                    font: {
+                                        size: 16
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+            
+            // --- Funções de Manipulação da Tabela ---
+            function applySortAndFilter() {
+                let data = [...colaboradores];
+                if(searchInput){
+                    const searchTerm = searchInput.value.toLowerCase();
+                    // Filter
+                    if (searchTerm) {
+                        data = data.filter(c => c.nome && String(c.nome).toLowerCase().includes(searchTerm));
+                    }
+                }
+
+
+                // Sort
+                data.sort((a, b) => {
+                    const valA = a[sortState.key] || a.funcionalidades?.[sortState.key] || '';
+                    const valB = b[sortState.key] || b.funcionalidades?.[sortState.key] || '';
+                    const comparison = String(valA).localeCompare(String(valB), 'pt-BR', { sensitivity: 'base' });
+                    return sortState.direction === 'asc' ? comparison : -comparison;
+                });
+                
+                renderTable(data);
+            }
+
+            function handleSort(key) {
+                if (sortState.key === key) {
+                    sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortState.key = key;
+                    sortState.direction = 'asc';
+                }
+                applySortAndFilter();
+            }
+
+            // --- Funções de Ações em Massa ---
+            function updateBulkActionUI() {
+                if(!selectionCount || !bulkActionContainer) return;
+                if (selectedRows.size > 0) {
+                    selectionCount.textContent = `${selectedRows.size} selecionado(s)`;
+                    bulkActionContainer.classList.remove('hidden');
+                } else {
+                    bulkActionContainer.classList.add('hidden');
+                }
+            }
+            
+            function toggleAllCheckboxes(event) {
+                 const isChecked = event.target.checked;
+                 selectedRows.clear();
+                 document.querySelectorAll('.row-checkbox').forEach(checkbox => {
+                     checkbox.checked = isChecked;
+                     if (isChecked) {
+                         selectedRows.add(checkbox.dataset.id);
+                     }
+                 });
+                 updateBulkActionUI();
+            }
+
+            function toggleRowCheckbox(event) {
+                const id = event.target.dataset.id;
+                if (event.target.checked) {
+                    selectedRows.add(id);
+                } else {
+                    selectedRows.delete(id);
+                }
+                const selectAllCheckbox = document.getElementById('select-all-checkbox');
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = (selectedRows.size === document.querySelectorAll('.row-checkbox').length && selectedRows.size > 0);
+                }
+                updateBulkActionUI();
+            }
+
+            async function applyBulkAction() {
+                const func = bulkFuncSelect.value;
+                const status = bulkStatusSelect.value;
+                if (!func || !status || selectedRows.size === 0) {
+                    showModal("Ação Inválida", "Selecione uma funcionalidade, um status e ao menos um colaborador.");
+                    return;
+                }
+
+                const batch = writeBatch(db);
+                selectedRows.forEach(id => {
+                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'colaboradores', id);
+                    const fieldPath = new FieldPath('funcionalidades', func);
+                    batch.update(docRef, fieldPath, status);
+                });
+
+                try {
+                    await batch.commit();
+                    showModal("Sucesso!", `Status de '${func}' atualizado para ${selectedRows.size} colaboradores.`);
+                    selectedRows.clear();
+                    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+                    if (selectAllCheckbox) {
+                       selectAllCheckbox.checked = false;
+                    }
+                    document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = false);
+                    updateBulkActionUI();
+                } catch (error) {
+                    console.error("Erro na ação em massa:", error);
+                    showModal("Erro", "Não foi possível aplicar as alterações.");
+                }
+            }
+            
+            // --- Funções de Renderização ---
+            function renderTable(dataToRender) {
+                if(!tableHeader || !tableBody) return;
+                tableHeader.innerHTML = '';
+                tableBody.innerHTML = '';
+
+                if (colaboradores.length === 0) {
+                    tableBody.innerHTML = `<tr id="initial-message-row"><td colspan="10" class="px-6 py-12 text-center text-gray-500">Nenhum dado importado. Por favor, importe uma planilha para começar.</td></tr>`;
+                    if(analyticsSection) analyticsSection.classList.add('hidden');
+                    return;
+                }
+                
+                const sortedFuncionalidades = Array.from(funcionalidades).sort();
+                
+                // Render Header
+                const headers = [
+                    { key: 'checkbox', text: '', width: CHECKBOX_WIDTH, isSortable: false },
+                    { key: 'nome', text: 'Nome', width: NOME_WIDTH, isSortable: true },
+                    { key: 'profile', text: 'Profile', width: PROFILE_WIDTH, isSortable: true },
+                    { key: 'role', text: 'Role', width: ROLE_WIDTH, isSortable: true },
+                    ...sortedFuncionalidades.map(f => ({ key: f, text: f, isSortable: true })),
+                    { key: 'actions', text: 'Ações', isSortable: false }
+                ];
+
+                const leftOffsets = [0, CHECKBOX_WIDTH, CHECKBOX_WIDTH + NOME_WIDTH, CHECKBOX_WIDTH + NOME_WIDTH + PROFILE_WIDTH];
+
+                headers.forEach((header, index) => {
+                    const th = document.createElement('th');
+                    th.className = 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
+                    
+                    if (index <= 3) { // Checkbox + first three data columns
+                        th.classList.add('sticky-col-header');
+                        th.style.left = `${leftOffsets[index]}px`;
+                        if (header.width) {
+                            th.style.width = `${header.width}px`;
+                            th.style.minWidth = `${header.width}px`;
+                        }
+                    }
+                    
+                    if (header.isSortable) {
+                        th.classList.add('sortable-header');
+                        th.onclick = () => handleSort(header.key);
+                        const sortIcon = sortState.key === header.key ? (sortState.direction === 'asc' ? '&#9650;' : '&#9660;') : '&#8693;';
+                        th.innerHTML = `${header.text} <span class="sort-icon">${sortIcon}</span>`;
+                    } else if (header.key === 'checkbox') {
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.id = 'select-all-checkbox';
+                        checkbox.className = "h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded";
+                        checkbox.onchange = toggleAllCheckboxes;
+                        th.appendChild(checkbox);
+                    } else {
+                        th.textContent = header.text;
+                    }
+
+                    tableHeader.appendChild(th);
+                });
+
+                // Render Body
+                if(!dataToRender || dataToRender.length === 0) {
+                     tableBody.innerHTML = `<tr><td colspan="${headers.length}" class="px-6 py-12 text-center text-gray-500">Nenhum colaborador encontrado com o filtro atual.</td></tr>`;
+                } else {
+                    dataToRender.forEach(colaborador => {
+                        const tr = document.createElement('tr');
+                        tr.className = "hover:bg-gray-50";
+                        
+                        const cells = [
+                            { type: 'checkbox' },
+                            { type: 'data', text: colaborador.nome, key: 'nome' },
+                            { type: 'data', text: colaborador.profile, key: 'profile' },
+                            { type: 'data', text: colaborador.role, key: 'role' },
+                            ...sortedFuncionalidades.map(f => ({ type: 'select', func: f, status: colaborador.funcionalidades?.[f] || 'Pendente' })),
+                            { type: 'actions' }
+                        ];
+
+                        cells.forEach((cell, index) => {
+                            const td = document.createElement('td');
+                            td.className = 'px-6 py-4 whitespace-nowrap text-sm';
+
+                            if(index <= 3) { // Sticky columns
+                                td.classList.add('sticky-col');
+                                td.style.left = `${leftOffsets[index]}px`;
+                                if(headers[index].width) {
+                                    td.style.width = `${headers[index].width}px`;
+                                    td.style.minWidth = `${headers[index].width}px`;
+                                }
+                            }
+
+                            if (cell.type === 'checkbox') {
+                                const checkbox = document.createElement('input');
+                                checkbox.type = 'checkbox';
+                                checkbox.dataset.id = colaborador.id;
+                                checkbox.className = 'row-checkbox h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded';
+                                checkbox.checked = selectedRows.has(colaborador.id);
+                                checkbox.onchange = toggleRowCheckbox;
+                                td.appendChild(checkbox);
+                            } else if (cell.type === 'data') {
+                                td.textContent = cell.text;
+                                if (cell.key === 'nome') {
+                                    td.classList.add('font-medium', 'text-gray-900');
+                                } else {
+                                    td.classList.add('text-gray-500');
+                                }
+                            } else if (cell.type === 'select') {
+                                const select = document.createElement('select');
+                                select.className = 'p-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 text-xs';
+                                STATUS_OPTIONS.forEach(opt => select.innerHTML += `<option value="${opt}" ${opt === cell.status ? 'selected' : ''}>${opt}</option>`);
+                                const setSelectStyle = () => {
+                                    select.className = select.className.replace(/status-\w+/g, '');
+                                    switch(select.value) {
+                                        case 'Concluído': select.classList.add('status-concluido'); break;
+                                        case 'Pendente': select.classList.add('status-pendente'); break;
+                                        case 'Não se aplica': select.classList.add('status-nao-se-aplica'); break;
+                                    }
+                                };
+                                setSelectStyle();
+                                select.addEventListener('change', (e) => {
+                                    updateStatus(colaborador.id, cell.func, e.target.value);
+                                    setSelectStyle();
+                                });
+                                td.appendChild(select);
+                            } else if (cell.type === 'actions') {
+                                const planButton = document.createElement('button');
+                                planButton.innerHTML = '✨ Gerar Plano';
+                                planButton.className = 'text-indigo-600 hover:text-indigo-900 font-medium';
+                                planButton.onclick = () => generateTrainingPlan(colaborador);
+                                td.appendChild(planButton);
+                            }
+                            tr.appendChild(td);
+                        });
+                        tableBody.appendChild(tr);
+                    });
+                }
+                updateUIElements();
+            }
+
+            function updateUIElements() {
+                // Bulk action dropdowns
+                if (bulkFuncSelect) {
+                    bulkFuncSelect.innerHTML = '<option value="">Selecione a Funcionalidade</option>';
+                    Array.from(funcionalidades).sort().forEach(f => bulkFuncSelect.innerHTML += `<option value="${f}">${f}</option>`);
+                }
+                if (bulkStatusSelect) {
+                    bulkStatusSelect.innerHTML = '<option value="">Selecione o Status</option>';
+                    STATUS_OPTIONS.forEach(s => bulkStatusSelect.innerHTML += `<option value="${s}">${s}</option>`);
+                }
+                
+                // Analytics Filters
+                if(analyticsProfileFilter) {
+                    const uniqueProfiles = [...new Set(colaboradores.map(c => c.profile))].filter(Boolean).sort();
+                    analyticsProfileFilter.innerHTML = '<option value="">Todos os Profiles</option>';
+                    uniqueProfiles.forEach(p => analyticsProfileFilter.innerHTML += `<option value="${p}">${p}</option>`);
+                }
+                if(analyticsRoleFilter) {
+                    const uniqueRoles = [...new Set(colaboradores.map(c => c.role))].filter(Boolean).sort();
+                    analyticsRoleFilter.innerHTML = '<option value="">Todas as Roles</option>';
+                    uniqueRoles.forEach(r => analyticsRoleFilter.innerHTML += `<option value="${r}">${r}</option>`);
+                }
+                if(analyticsFunctionalityFilter) {
+                    analyticsFunctionalityFilter.innerHTML = '';
+                    Array.from(funcionalidades).sort().forEach(f => {
+                         analyticsFunctionalityFilter.innerHTML += `
+                            <label class="flex items-center space-x-2 text-sm">
+                                <input type="checkbox" value="${f}" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
+                                <span>${f}</span>
+                            </label>
+                         `;
+                    });
+                    analyticsFunctionalityFilter.querySelectorAll('input').forEach(cb => cb.addEventListener('change', updateAnalytics));
+                }
+
+                updateAnalytics();
+            }
+
+            // --- Funções de Inicialização e Handlers ---
+            async function initializeAppAndData() {
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                } catch (error) {
+                    console.error("Erro ao inicializar Firebase:", error);
+                    showModal("Erro de Conexão", "Não foi possível conectar ao banco de dados.");
+                    return;
+                }
+                onAuthStateChanged(auth, user => {
+                    if (user) {
+                        userId = user.uid;
+                        authStatusContainer.classList.remove('hidden');
+                        authStatusText.innerHTML = `Sessão ativa. <strong>ID de Colaboração:</strong> ${userId}`;
+                        setupRealtimeListener();
+                    } else {
+                        authenticateUser();
+                    }
+                });
+            }
+            
+            function setupRealtimeListener() {
+                const dataCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'colaboradores');
+                onSnapshot(query(dataCollectionRef), (snapshot) => {
+                    colaboradores = [];
+                    const newFuncs = new Set();
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        colaboradores.push({ id: doc.id, ...data });
+                        if (data.funcionalidades) {
+                            Object.keys(data.funcionalidades).forEach(func => newFuncs.add(func));
+                        }
+                    });
+                    funcionalidades = newFuncs;
+                    applySortAndFilter();
+                }, (error) => console.error("Erro ao buscar dados:", error));
+            }
+            
+            async function handleImport(event) {
+                const file = event.target.files[0];
+                if (!file || !userId) return;
+
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                        const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
+                        if (jsonData.length < 2) { showModal("Arquivo Vazio", "A planilha importada não contém dados."); return; }
+
+                        const headers = jsonData[0].map(h => String(h).trim());
+                        const lowerCaseHeaders = headers.map(h => h.toLowerCase());
+
+                        const nomeIndex = lowerCaseHeaders.findIndex(h => h === 'name' || h === 'nome');
+                        const profileIndex = lowerCaseHeaders.findIndex(h => h === 'profile');
+                        const roleIndex = lowerCaseHeaders.findIndex(h => h === 'role');
+                        const idIndex = lowerCaseHeaders.findIndex(h => h === 'id');
+
+                        if (nomeIndex === -1 || profileIndex === -1 || roleIndex === -1) {
+                            showModal("Formato Inválido", "Sua planilha precisa ter as colunas 'Name', 'Profile' e 'Role'.");
+                            return;
+                        }
+
+                        const ignoreIndices = [nomeIndex, profileIndex, roleIndex];
+                        if (idIndex !== -1) ignoreIndices.push(idIndex);
+
+                        const batch = writeBatch(db);
+                        jsonData.slice(1).forEach((row, index) => {
+                            const nome = row[nomeIndex], profile = row[profileIndex], role = row[roleIndex];
+                            if (!nome || !profile || !role) return;
+                            
+                            let docId = (idIndex !== -1 && row[idIndex]) ? String(row[idIndex]).trim().replace(/[\/\*\[\]]/g, '_') : `${nome.replace(/\s+/g, '-').toLowerCase()}-${index}`;
+                            const docRef = doc(db, 'artifacts', appId, 'users', userId, 'colaboradores', docId);
+                            
+                            const funcsData = {};
+                            headers.forEach((header, hIndex) => {
+                                if (!ignoreIndices.includes(hIndex)) {
+                                    const status = row[hIndex];
+                                    funcsData[header] = STATUS_OPTIONS.includes(String(status)) ? String(status) : 'Pendente';
+                                }
+                            });
+                            batch.set(docRef, { nome, profile, role, funcionalidades: funcsData });
+                        });
+                        await batch.commit();
+                        showModal("Sucesso!", `${jsonData.length - 1} colaboradores foram importados/atualizados.`);
+                    } catch (error) {
+                        console.error("Erro ao importar planilha:", error);
+                        showModal("Erro de Importação", `Ocorreu um erro ao processar o arquivo: ${error.message}`);
+                    } finally {
+                        if (fileUpload) fileUpload.value = '';
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+
+            async function authenticateUser() {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Erro na autenticação:", error);
+                    showModal("Erro de Autenticação", `Falha ao iniciar a sessão: ${error.message}`);
+                }
+            }
+            
+            async function addFunctionality(funcNameToAdd = null) {
+                const newFuncName = funcNameToAdd || (newFuncInput ? newFuncInput.value.trim() : null);
+                if (!newFuncName || !userId || colaboradores.length === 0) {
+                    if (!funcNameToAdd) showModal("Ação Inválida", "Digite um nome para a nova funcionalidade.");
+                    return;
+                }
+                if (funcionalidades.has(newFuncName)) {
+                    if (!funcNameToAdd) showModal("Funcionalidade Duplicada", "Essa funcionalidade já existe.");
+                    return;
+                }
+
+                const batch = writeBatch(db);
+                colaboradores.forEach(col => {
+                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'colaboradores', col.id);
+                    const fieldPath = new FieldPath('funcionalidades', newFuncName);
+                    batch.update(docRef, fieldPath, 'Pendente');
+                });
+
+                try {
+                    await batch.commit();
+                    if (!funcNameToAdd && newFuncInput) {
+                        newFuncInput.value = '';
+                        showModal("Sucesso!", `Funcionalidade '${newFuncName}' adicionada a todos.`);
+                    }
+                } catch (error) {
+                    console.error("Erro ao adicionar funcionalidade:", error);
+                    showModal("Erro", "Não foi possível adicionar a nova funcionalidade.");
+                }
+            }
+            
+            function handleExport() {
+                if (colaboradores.length === 0) { showModal("Sem Dados", "Não há dados para exportar."); return; }
+                const sortedFuncionalidades = Array.from(funcionalidades).sort();
+                const dataToExport = colaboradores.map(col => {
+                    const row = { 'ID': col.id, 'Nome': col.nome, 'Profile': col.profile, 'Role': col.role };
+                    sortedFuncionalidades.forEach(func => {
+                        row[func] = col.funcionalidades?.[func] || 'Pendente';
+                    });
+                    return row;
+                });
+                const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'Controle de Treinamento');
+                XLSX.writeFile(workbook, 'Controle_Treinamento_Salesforce_Atualizado.xlsx');
+            }
+
+            function copyUserIdToClipboard() {
+                 if (!userId) return;
+                const textArea = document.createElement('textarea');
+                textArea.value = userId;
+                textArea.style.position = 'absolute';
+                textArea.style.left = '-9999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    copyIdButton.textContent = 'Copiado!';
+                    setTimeout(() => { copyIdButton.textContent = 'Copiar ID'; }, 2000);
+                } catch (err) {
+                    console.error('Falha ao copiar ID: ', err);
+                    showModal("Erro ao Copiar", "Não foi possível copiar o ID automaticamente.");
+                }
+                document.body.removeChild(textArea);
+            }
+
+            // --- Adiciona Event Listeners ---
+            if(modalCloseButton) modalCloseButton.addEventListener('click', hideModal);
+            if(fileUpload) fileUpload.addEventListener('change', handleImport);
+            if(exportButton) exportButton.addEventListener('click', handleExport);
+            if(addFuncButton) addFuncButton.addEventListener('click', () => addFunctionality());
+            if(getSuggestionsButton) getSuggestionsButton.addEventListener('click', getFunctionalitySuggestions);
+            if(copyIdButton) copyIdButton.addEventListener('click', copyUserIdToClipboard);
+            if(searchInput) searchInput.addEventListener('input', applySortAndFilter);
+            if(bulkApplyButton) bulkApplyButton.addEventListener('click', applyBulkAction);
+            if(newFuncInput) newFuncInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') addFuncButton.click(); });
+            if(navMainButton) navMainButton.addEventListener('click', () => showPage('main'));
+            if(navAnalyticsButton) navAnalyticsButton.addEventListener('click', () => showPage('analytics'));
+            if(analyticsProfileFilter) analyticsProfileFilter.addEventListener('change', updateAnalytics);
+            if(analyticsRoleFilter) analyticsRoleFilter.addEventListener('change', updateAnalytics);
+
+            // --- Inicialização ---
+            initializeAppAndData();
+        });
+    </script>
+</body>
+</html>
