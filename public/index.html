@@ -1,0 +1,305 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Treinamentos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brand: #f6a91e;
+            --brand-dark: #df8f07;
+            --ink: #0b1120;
+            --steel: #1e293b;
+            --frost: rgba(15, 23, 42, 0.72);
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-image:
+                radial-gradient(circle at 10% 15%, rgba(8, 145, 178, 0.18), transparent 30%),
+                radial-gradient(circle at 82% 88%, rgba(249, 115, 22, 0.2), transparent 24%),
+                linear-gradient(180deg, rgba(2, 6, 23, 0.72), rgba(2, 6, 23, 0.82)),
+                url('./img/BG.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            overflow-x: hidden;
+            scrollbar-width: auto;
+            scrollbar-color: #94a3b8 rgba(148, 163, 184, 0.18);
+        }
+
+        .sidebar-active {
+            background: linear-gradient(90deg, rgba(246, 169, 30, 0.2), rgba(246, 169, 30, 0.05));
+            color: #f8fafc;
+            border-right: 4px solid var(--brand);
+        }
+
+        .sidebar-btn {
+            color: #cbd5e1;
+            white-space: nowrap;
+        }
+
+        .sidebar-btn:hover {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: #f8fafc;
+        }
+
+        .matrix-table th,
+        .matrix-table td {
+            border: 1px solid #f1f5f9;
+        }
+
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            background-color: white;
+            z-index: 10;
+            border-right: 2px solid #f1f5f9 !important;
+        }
+
+        ::-webkit-scrollbar {
+            width: 14px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(148, 163, 184, 0.18);
+            border-radius: 999px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 999px;
+            border: 3px solid rgba(15, 23, 42, 0.08);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .fixed-scroll-target,
+        .matrix-scroll {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .fixed-scroll-target::-webkit-scrollbar,
+        .matrix-scroll::-webkit-scrollbar {
+            height: 0;
+            width: 0;
+        }
+
+        .matrix-fixed-scroll {
+            scrollbar-width: auto;
+            scrollbar-color: #64748b #cbd5e1;
+        }
+
+        .matrix-fixed-scroll::-webkit-scrollbar {
+            height: 20px;
+        }
+
+        .matrix-fixed-scroll::-webkit-scrollbar-track {
+            background: #cbd5e1;
+            border-radius: 999px;
+        }
+
+        .matrix-fixed-scroll::-webkit-scrollbar-thumb {
+            background: #64748b;
+            border-radius: 999px;
+            border: 4px solid #cbd5e1;
+        }
+
+        .matrix-fixed-scroll::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        .matrix-filter-dropdown summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .matrix-filter-chevron {
+            color: #94a3b8;
+            transition: transform 0.2s ease;
+        }
+
+        .matrix-filter-dropdown[open] .matrix-filter-chevron {
+            transform: rotate(180deg);
+        }
+
+        .dashboard-pie-enter {
+            animation: dashboardPieIn 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        @keyframes dashboardPieIn {
+            from {
+                opacity: 0;
+                transform: scale(0.88) rotate(-12deg);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.25s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .bg-indigo-600 {
+            background-color: var(--brand) !important;
+        }
+
+        .hover\:bg-indigo-700:hover {
+            background-color: var(--brand-dark) !important;
+        }
+
+        .text-indigo-600 {
+            color: var(--brand) !important;
+        }
+
+        .bg-indigo-50 {
+            background-color: #fff7e6 !important;
+        }
+
+        .border-indigo-600 {
+            border-color: var(--brand) !important;
+        }
+
+        .focus\:border-indigo-400:focus {
+            border-color: #f8c96b !important;
+        }
+
+        .shadow-indigo-100 {
+            --tw-shadow-color: rgba(246, 169, 30, 0.28) !important;
+        }
+    </style>
+</head>
+<body class="text-slate-900">
+    <div id="auth-view" class="min-h-screen hidden"></div>
+
+    <div id="app-shell" class="hidden">
+        <div class="flex min-h-screen">
+            <aside class="fixed left-0 top-0 h-full w-64 bg-slate-950/65 border-r border-slate-700/60 z-40 hidden lg:flex flex-col shadow-2xl backdrop-blur-xl">
+                <div class="p-8">
+                    <div class="mb-10 space-y-3">
+                        <div class="rounded-2xl px-1 py-1">
+                            <img src="./img/logo-branca.png" alt="Orgadata" class="w-full h-auto max-h-16 object-contain">
+                        </div>
+                        <h1 class="text-sm font-black tracking-[0.12em] text-slate-200 uppercase">Portal de Treinamentos</h1>
+                    </div>
+
+                    <nav class="space-y-2">
+                        <button onclick="switchTab('public-overview')" id="nav-public-overview" class="sidebar-btn public-only w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all duration-200 sidebar-active">
+                            <i data-lucide="table-properties" class="w-5 h-5"></i> Matriz Pública
+                        </button>
+                        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="sidebar-btn admin-only w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all duration-200">
+                            <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
+                        </button>
+                        <button onclick="switchTab('categories')" id="nav-categories" class="sidebar-btn admin-only w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all duration-200">
+                            <i data-lucide="layers" class="w-5 h-5"></i> Categorias
+                        </button>
+                        <button onclick="switchTab('report')" id="nav-report" class="sidebar-btn admin-only w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all duration-200">
+                            <i data-lucide="file-spreadsheet" class="w-5 h-5"></i> Matriz Geral
+                        </button>
+                        <button onclick="switchTab('users')" id="nav-users" class="sidebar-btn admin-only w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all duration-200">
+                            <i data-lucide="users" class="w-5 h-5"></i> Usuários
+                        </button>
+                    </nav>
+                </div>
+                <div class="mt-auto p-8 border-t border-white/10">
+                    <div id="sidebar-public-block" class="hidden bg-white/10 rounded-2xl p-4 space-y-3 border border-white/10">
+                        <div>
+                            <p class="text-xs text-slate-300 font-bold uppercase tracking-[0.24em]">Acesso</p>
+                            <p class="text-sm font-bold text-slate-100">Painel administrativo</p>
+                        </div>
+                        <button onclick="openAdminLoginModal()" class="w-full px-4 py-2.5 text-sm font-bold text-slate-950 bg-amber-400 border border-amber-400 rounded-xl hover:bg-amber-300 transition-all">
+                            Painel de Admin
+                        </button>
+                    </div>
+                    <div id="sidebar-session-block" class="bg-white/10 rounded-2xl p-4 space-y-3 border border-white/10">
+                        <div>
+                            <p class="text-xs text-slate-300 font-bold uppercase tracking-[0.24em]">Sessão</p>
+                            <p id="sidebar-session-email" class="text-sm font-bold text-slate-100 break-all">-</p>
+                        </div>
+                        <button onclick="logout()" class="w-full px-4 py-2.5 text-sm font-bold text-slate-100 bg-slate-900/40 border border-white/20 rounded-xl hover:border-white/40 hover:bg-slate-900/65 transition-all">
+                            Sair
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="w-full min-w-0 flex flex-col lg:ml-64 lg:w-[calc(100%-16rem)]">
+                <header class="sticky top-0 bg-slate-950/55 backdrop-blur-md border-b border-white/10 z-30 px-8 py-4 flex items-center justify-between gap-4 min-w-0">
+                    <div class="flex items-center gap-4 bg-white/10 px-4 py-2 rounded-full w-full max-w-md min-w-0 border border-white/10">
+                        <i data-lucide="search" class="w-5 h-5 text-slate-300"></i>
+                        <input type="text" id="global-search" oninput="handleSearch(this.value)" placeholder="Pesquisar por nome..." class="bg-transparent border-none focus:ring-0 text-sm w-full outline-none text-slate-100 placeholder:text-slate-400">
+                    </div>
+                    <div class="flex items-center gap-3 ml-4">
+                        <div class="text-right hidden sm:block">
+                            <p id="header-mode-title" class="text-sm font-bold text-slate-100">Painel Administrativo</p>
+                            <p id="header-session-email" class="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Gestão de conteúdo</p>
+                        </div>
+                        <span id="sync-indicator" class="hidden px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">
+                            Sincronizando...
+                        </span>
+                        <div class="w-10 h-10 rounded-xl bg-white/10 border border-white/20 shadow-sm overflow-hidden flex items-center justify-center text-slate-100">
+                            <i data-lucide="shield-check" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                </header>
+
+                <div id="main-view" class="p-8 max-w-[1400px] mx-auto w-full min-w-0 box-border overflow-x-hidden"></div>
+            </main>
+        </div>
+    </div>
+
+    <div id="modal-container" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm hidden">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-2xl overflow-hidden animate-fade-in">
+            <div class="flex items-center justify-between p-6 border-b border-slate-50 bg-slate-50/50">
+                <h3 id="modal-title" class="text-xl font-bold text-slate-800">Título do Modal</h3>
+                <button onclick="closeModal()" class="p-2 text-slate-400 hover:bg-slate-100 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div id="modal-content" class="p-6"></div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed top-4 right-4 z-[60] flex flex-col gap-3"></div>
+    <div id="matrix-scrollbar-dock" class="hidden fixed bottom-2 z-[55]">
+        <div
+            id="matrix-scrollbar-track"
+            class="matrix-fixed-scroll h-5 overflow-x-auto rounded-full border border-slate-300 bg-slate-200/90 shadow-lg"
+            aria-label="Barra de rolagem horizontal da matriz"
+        >
+            <div id="matrix-scrollbar-inner" class="h-px"></div>
+        </div>
+    </div>
+
+    <script src="./supabase-config.js"></script>
+    <script type="module" src="./firebase-config.js"></script>
+    <script src="./js/app/01-core.js"></script>
+    <script src="./js/app/02-rendering.js"></script>
+    <script src="./js/app/03-modals-users.js"></script>
+    <script src="./js/app/04-actions-init.js"></script>
+</body>
+</html>
+
+
