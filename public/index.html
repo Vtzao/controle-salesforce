@@ -35,7 +35,11 @@
             background-attachment: fixed;
             overflow-x: hidden;
             scrollbar-width: auto;
-            scrollbar-color: #94a3b8 rgba(148, 163, 184, 0.18);
+            scrollbar-color: rgba(148, 163, 184, 0.38) rgba(148, 163, 184, 0.10);
+        }
+
+        body.menu-open {
+            overflow: hidden;
         }
 
         .sidebar-active {
@@ -64,6 +68,7 @@
             left: 0;
             background-color: white;
             z-index: 10;
+            overflow: hidden;
             border-right: 2px solid #f1f5f9 !important;
         }
 
@@ -73,18 +78,18 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: rgba(148, 163, 184, 0.18);
+            background: rgba(51, 65, 85, 0.26);
             border-radius: 999px;
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #94a3b8;
+            background: rgba(51, 65, 85, 0.68);
             border-radius: 999px;
             border: 3px solid rgba(15, 23, 42, 0.08);
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+            background: rgba(30, 41, 59, 0.86);
         }
 
         .fixed-scroll-target,
@@ -101,7 +106,7 @@
 
         .matrix-fixed-scroll {
             scrollbar-width: auto;
-            scrollbar-color: #64748b #cbd5e1;
+            scrollbar-color: #1e293b #94a3b8;
         }
 
         .matrix-fixed-scroll::-webkit-scrollbar {
@@ -109,18 +114,18 @@
         }
 
         .matrix-fixed-scroll::-webkit-scrollbar-track {
-            background: #cbd5e1;
+            background: #94a3b8;
             border-radius: 999px;
         }
 
         .matrix-fixed-scroll::-webkit-scrollbar-thumb {
-            background: #64748b;
+            background: #1e293b;
             border-radius: 999px;
-            border: 4px solid #cbd5e1;
+            border: 4px solid #94a3b8;
         }
 
         .matrix-fixed-scroll::-webkit-scrollbar-thumb:hover {
-            background: #475569;
+            background: #0f172a;
         }
 
         .matrix-filter-dropdown summary::-webkit-details-marker {
@@ -140,6 +145,44 @@
             animation: dashboardPieIn 0.55s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
+        .dashboard-pie-card {
+            width: 100%;
+        }
+
+        .dashboard-pie-slice-group {
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .dashboard-pie-slice-group:focus,
+        .dashboard-pie-slice-group:focus-visible {
+            outline: none;
+        }
+
+        .dashboard-pie-slice-path {
+            transition: stroke 0.2s ease, stroke-width 0.2s ease, opacity 0.2s ease;
+        }
+
+        .dashboard-pie-slice-label {
+            pointer-events: none;
+        }
+
+        .dashboard-pie-slice-group.is-active .dashboard-pie-slice-path {
+            stroke: #ffffff;
+            stroke-width: 2.2;
+            opacity: 1;
+        }
+
+        .dashboard-pie-slice-group.is-dimmed {
+            opacity: 0.48;
+        }
+
+        .dashboard-pie-slice-group:focus-visible .dashboard-pie-slice-path {
+            stroke: #0f172a;
+            stroke-width: 2.2;
+            opacity: 1;
+        }
+
         @keyframes dashboardPieIn {
             from {
                 opacity: 0;
@@ -150,6 +193,16 @@
                 opacity: 1;
                 transform: scale(1) rotate(0deg);
             }
+        }
+
+        @keyframes cellSavedFlash {
+            0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.65); background: rgba(16, 185, 129, 0.18); }
+            55%  { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); background: rgba(16, 185, 129, 0.06); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); background: transparent; }
+        }
+
+        .cell-saved-flash {
+            animation: cellSavedFlash 0.7s ease-out;
         }
 
         .animate-fade-in {
@@ -195,6 +248,81 @@
         .shadow-indigo-100 {
             --tw-shadow-color: rgba(246, 169, 30, 0.28) !important;
         }
+
+        .mobile-menu-overlay {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.24s ease;
+        }
+
+        .mobile-menu-overlay[data-open="true"] {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .mobile-menu-panel {
+            transform: translateX(-105%);
+            transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .mobile-menu-overlay[data-open="true"] .mobile-menu-panel {
+            transform: translateX(0);
+        }
+
+        /* Scrollbar vertical das tabelas de usuários — baixa opacidade */
+        .users-table-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(71, 85, 105, 0.75) rgba(51, 65, 85, 0.18);
+        }
+
+        .users-table-scroll::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        .users-table-scroll::-webkit-scrollbar-track {
+            background: rgba(51, 65, 85, 0.14);
+        }
+
+        .users-table-scroll::-webkit-scrollbar-thumb {
+            background: rgba(71, 85, 105, 0.68);
+            border-radius: 999px;
+        }
+
+        .users-table-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(51, 65, 85, 0.86);
+        }
+
+        @media (max-width: 1023px) {
+            body {
+                background-attachment: scroll;
+            }
+
+            .fixed-scroll-target,
+            .matrix-scroll {
+                scrollbar-width: thin;
+                -ms-overflow-style: auto;
+            }
+
+            .fixed-scroll-target::-webkit-scrollbar,
+            .matrix-scroll::-webkit-scrollbar {
+                width: 10px;
+                height: 10px;
+            }
+
+            .fixed-scroll-target::-webkit-scrollbar-track,
+            .matrix-scroll::-webkit-scrollbar-track {
+                background: rgba(51, 65, 85, 0.30);
+                border-radius: 999px;
+            }
+
+            .fixed-scroll-target::-webkit-scrollbar-thumb,
+            .matrix-scroll::-webkit-scrollbar-thumb {
+                background: #475569;
+                border-radius: 999px;
+                border: 2px solid rgba(15, 23, 42, 0.1);
+            }
+        }
     </style>
 </head>
 <body class="text-slate-900">
@@ -212,25 +340,30 @@
                     </div>
 
                     <nav class="space-y-2">
-                        <button onclick="switchTab('public-overview')" id="nav-public-overview" class="sidebar-btn public-only w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all duration-200 sidebar-active">
-                            <i data-lucide="table-properties" class="w-5 h-5"></i> Matriz Pública
+                        <button onclick="switchTab('public-overview')" id="nav-public-overview" data-nav-tab="public-overview" class="sidebar-btn public-only w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-200 sidebar-active">
+                            <i data-lucide="table-properties" class="w-5 h-5 shrink-0"></i>
+                            <span class="min-w-0 truncate">Tabela Pública</span>
                         </button>
-                        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="sidebar-btn admin-only w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all duration-200">
-                            <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
+                        <button onclick="switchTab('dashboard')" id="nav-dashboard" data-nav-tab="dashboard" class="sidebar-btn admin-only w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-200">
+                            <i data-lucide="layout-dashboard" class="w-5 h-5 shrink-0"></i>
+                            <span class="min-w-0 truncate">Dashboard</span>
                         </button>
-                        <button onclick="switchTab('categories')" id="nav-categories" class="sidebar-btn admin-only w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all duration-200">
-                            <i data-lucide="layers" class="w-5 h-5"></i> Categorias
+                        <button onclick="switchTab('categories')" id="nav-categories" data-nav-tab="categories" class="sidebar-btn admin-only w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-200">
+                            <i data-lucide="layers" class="w-5 h-5 shrink-0"></i>
+                            <span class="min-w-0 truncate">Categorias &amp; Módulos</span>
                         </button>
-                        <button onclick="switchTab('report')" id="nav-report" class="sidebar-btn admin-only w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all duration-200">
-                            <i data-lucide="file-spreadsheet" class="w-5 h-5"></i> Matriz Geral
+                        <button onclick="switchTab('report')" id="nav-report" data-nav-tab="report" class="sidebar-btn admin-only w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-200">
+                            <i data-lucide="file-spreadsheet" class="w-5 h-5 shrink-0"></i>
+                            <span class="min-w-0 truncate">Editar Status</span>
                         </button>
-                        <button onclick="switchTab('users')" id="nav-users" class="sidebar-btn admin-only w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all duration-200">
-                            <i data-lucide="users" class="w-5 h-5"></i> Usuários
+                        <button onclick="switchTab('users')" id="nav-users" data-nav-tab="users" class="sidebar-btn admin-only w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-200">
+                            <i data-lucide="users" class="w-5 h-5 shrink-0"></i>
+                            <span class="min-w-0 truncate">Usuários</span>
                         </button>
                     </nav>
                 </div>
                 <div class="mt-auto p-8 border-t border-white/10">
-                    <div id="sidebar-public-block" class="hidden bg-white/10 rounded-2xl p-4 space-y-3 border border-white/10">
+                    <div id="sidebar-public-block" class="public-session-block hidden bg-white/10 rounded-2xl p-4 space-y-3 border border-white/10">
                         <div>
                             <p class="text-xs text-slate-300 font-bold uppercase tracking-[0.24em]">Acesso</p>
                             <p class="text-sm font-bold text-slate-100">Painel administrativo</p>
@@ -239,11 +372,14 @@
                             Painel de Admin
                         </button>
                     </div>
-                    <div id="sidebar-session-block" class="bg-white/10 rounded-2xl p-4 space-y-3 border border-white/10">
+                    <div id="sidebar-session-block" class="auth-session-block bg-white/10 rounded-2xl p-4 space-y-3 border border-white/10">
                         <div>
                             <p class="text-xs text-slate-300 font-bold uppercase tracking-[0.24em]">Sessão</p>
-                            <p id="sidebar-session-email" class="text-sm font-bold text-slate-100 break-all">-</p>
+                            <p id="sidebar-session-email" data-session-email class="text-sm font-bold text-slate-100 break-all">-</p>
                         </div>
+                        <button onclick="openModal('change-password')" class="w-full px-4 py-2.5 text-sm font-bold text-slate-100 bg-amber-500/30 border border-amber-300/40 rounded-xl hover:border-amber-200/70 hover:bg-amber-500/45 transition-all">
+                            Alterar Senha
+                        </button>
                         <button onclick="logout()" class="w-full px-4 py-2.5 text-sm font-bold text-slate-100 bg-slate-900/40 border border-white/20 rounded-xl hover:border-white/40 hover:bg-slate-900/65 transition-all">
                             Sair
                         </button>
@@ -251,14 +387,77 @@
                 </div>
             </aside>
 
-            <main class="w-full min-w-0 flex flex-col lg:ml-64 lg:w-[calc(100%-16rem)]">
-                <header class="sticky top-0 bg-slate-950/55 backdrop-blur-md border-b border-white/10 z-30 px-8 py-4 flex items-center justify-between gap-4 min-w-0">
-                    <div class="flex items-center gap-4 bg-white/10 px-4 py-2 rounded-full w-full max-w-md min-w-0 border border-white/10">
-                        <i data-lucide="search" class="w-5 h-5 text-slate-300"></i>
-                        <input type="text" id="global-search" oninput="handleSearch(this.value)" placeholder="Pesquisar por nome..." class="bg-transparent border-none focus:ring-0 text-sm w-full outline-none text-slate-100 placeholder:text-slate-400">
+            <div id="mobile-menu-overlay" data-open="false" class="mobile-menu-overlay fixed inset-0 z-[65] lg:hidden">
+                <button type="button" aria-label="Fechar menu" onclick="closeMobileMenu()" class="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px]"></button>
+                <aside class="mobile-menu-panel relative z-10 h-full w-[86vw] max-w-[340px] bg-slate-950/95 border-r border-slate-700/70 shadow-2xl flex flex-col">
+                    <div class="p-5 border-b border-white/10 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <img src="./img/logo-branca.png" alt="Orgadata" class="w-28 h-auto object-contain">
+                            <p class="text-[11px] leading-4 font-black tracking-[0.14em] text-slate-200 uppercase">Portal de Treinamentos</p>
+                        </div>
+                        <button type="button" onclick="closeMobileMenu()" class="p-2 rounded-lg text-slate-300 hover:bg-white/10">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
                     </div>
-                    <div class="flex items-center gap-3 ml-4">
-                        <div class="text-right hidden sm:block">
+                    <nav class="p-4 space-y-2 overflow-y-auto">
+                        <button onclick="switchTabFromMenu('public-overview')" data-nav-tab="public-overview" class="sidebar-btn public-only w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-200 sidebar-active">
+                            <i data-lucide="table-properties" class="w-5 h-5 shrink-0"></i>
+                            <span class="min-w-0 truncate">Tabela Pública</span>
+                        </button>
+                        <button onclick="switchTabFromMenu('dashboard')" data-nav-tab="dashboard" class="sidebar-btn admin-only w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-200">
+                            <i data-lucide="layout-dashboard" class="w-5 h-5 shrink-0"></i>
+                            <span class="min-w-0 truncate">Dashboard</span>
+                        </button>
+                        <button onclick="switchTabFromMenu('categories')" data-nav-tab="categories" class="sidebar-btn admin-only w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-200">
+                            <i data-lucide="layers" class="w-5 h-5 shrink-0"></i>
+                            <span class="min-w-0 truncate">Categorias &amp; Módulos</span>
+                        </button>
+                        <button onclick="switchTabFromMenu('report')" data-nav-tab="report" class="sidebar-btn admin-only w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-200">
+                            <i data-lucide="file-spreadsheet" class="w-5 h-5 shrink-0"></i>
+                            <span class="min-w-0 truncate">Editar Status</span>
+                        </button>
+                        <button onclick="switchTabFromMenu('users')" data-nav-tab="users" class="sidebar-btn admin-only w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-200">
+                            <i data-lucide="users" class="w-5 h-5 shrink-0"></i>
+                            <span class="min-w-0 truncate">Usuários</span>
+                        </button>
+                    </nav>
+                    <div class="mt-auto p-4 border-t border-white/10">
+                        <div class="public-session-block hidden bg-white/10 rounded-2xl p-4 space-y-3 border border-white/10">
+                            <div>
+                                <p class="text-xs text-slate-300 font-bold uppercase tracking-[0.24em]">Acesso</p>
+                                <p class="text-sm font-bold text-slate-100">Painel administrativo</p>
+                            </div>
+                            <button onclick="openAdminLoginModal(); closeMobileMenu();" class="w-full px-4 py-2.5 text-sm font-bold text-slate-950 bg-amber-400 border border-amber-400 rounded-xl hover:bg-amber-300 transition-all">
+                                Painel de Admin
+                            </button>
+                        </div>
+                        <div class="auth-session-block bg-white/10 rounded-2xl p-4 space-y-3 border border-white/10">
+                            <div>
+                                <p class="text-xs text-slate-300 font-bold uppercase tracking-[0.24em]">Sessão</p>
+                                <p data-session-email class="text-sm font-bold text-slate-100 break-all">-</p>
+                            </div>
+                            <button onclick="openModal('change-password'); closeMobileMenu();" class="w-full px-4 py-2.5 text-sm font-bold text-slate-100 bg-amber-500/30 border border-amber-300/40 rounded-xl hover:border-amber-200/70 hover:bg-amber-500/45 transition-all">
+                                Alterar Senha
+                            </button>
+                            <button onclick="logout(); closeMobileMenu();" class="w-full px-4 py-2.5 text-sm font-bold text-slate-100 bg-slate-900/40 border border-white/20 rounded-xl hover:border-white/40 hover:bg-slate-900/65 transition-all">
+                                Sair
+                            </button>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+
+            <main class="w-full min-w-0 flex flex-col lg:ml-64 lg:w-[calc(100%-16rem)]">
+                <header class="sticky top-0 bg-slate-950/55 backdrop-blur-md border-b border-white/10 z-30 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex items-center justify-between gap-3 sm:gap-4 min-w-0">
+                    <button type="button" onclick="toggleMobileMenu()" class="lg:hidden shrink-0 p-2 rounded-xl bg-white/10 border border-white/20 text-slate-100 hover:bg-white/15">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                    <div class="flex items-center gap-3 bg-white/10 px-3 sm:px-4 py-2 rounded-full w-full max-w-md min-w-0 border border-white/10">
+                        <i data-lucide="search" class="w-5 h-5 text-slate-300"></i>
+                        <input type="text" id="global-search" oninput="handleSearch(this.value)" placeholder="Pesquisar por nome..." class="bg-transparent border-none focus:ring-0 text-sm w-full outline-none text-slate-100 placeholder:text-slate-400 min-w-0">
+                    </div>
+                    <div class="flex items-center gap-2 sm:gap-3 ml-1 sm:ml-2">
+                        <div class="text-right hidden md:block">
                             <p id="header-mode-title" class="text-sm font-bold text-slate-100">Painel Administrativo</p>
                             <p id="header-session-email" class="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Gestão de conteúdo</p>
                         </div>
@@ -271,7 +470,7 @@
                     </div>
                 </header>
 
-                <div id="main-view" class="p-8 max-w-[1400px] mx-auto w-full min-w-0 box-border overflow-x-hidden"></div>
+                <div id="main-view" class="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto w-full min-w-0 box-border"></div>
             </main>
         </div>
     </div>
@@ -288,7 +487,26 @@
         </div>
     </div>
 
-    <div id="toast-container" class="fixed top-4 right-4 z-[60] flex flex-col gap-3"></div>
+    <div id="confirm-dialog" class="fixed inset-0 z-[90] flex items-center justify-center p-4 hidden">
+        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="dismissConfirmDialog()"></div>
+        <div class="relative bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 w-full max-w-sm animate-fade-in space-y-4">
+            <div class="flex items-start gap-3">
+                <span id="confirm-dialog-icon" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-red-50 text-red-500">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                </span>
+                <div>
+                    <p id="confirm-dialog-title" class="font-bold text-slate-800 text-sm"></p>
+                    <p id="confirm-dialog-message" class="mt-1 text-sm text-slate-500"></p>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="dismissConfirmDialog()" class="flex-1 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl text-sm hover:bg-slate-50 transition-colors">Cancelar</button>
+                <button id="confirm-dialog-ok" onclick="resolveConfirmDialog()" class="flex-1 py-2.5 font-bold rounded-xl text-sm transition-colors">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed top-4 left-3 right-3 sm:left-auto sm:right-4 z-[60] flex flex-col gap-3"></div>
     <div id="matrix-scrollbar-dock" class="hidden fixed bottom-2 z-[55]">
         <div
             id="matrix-scrollbar-track"
@@ -307,4 +525,3 @@
     <script src="./js/app/04-actions-init.js"></script>
 </body>
 </html>
-

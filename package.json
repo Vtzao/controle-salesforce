@@ -1,4 +1,11 @@
 {
+  "scripts": {
+    "supabase:preflight": "powershell -ExecutionPolicy Bypass -File ./scripts/supabase-preflight.ps1",
+    "supabase:setup": "powershell -ExecutionPolicy Bypass -File ./scripts/supabase-setup.ps1",
+    "supabase:pull": "npx supabase db pull --schema public",
+    "supabase:push": "npx supabase db push",
+    "supabase:new-migration": "npx supabase migration new"
+  },
   "dependencies": {
     "firebase": "^12.11.0"
   }

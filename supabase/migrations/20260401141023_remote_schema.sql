@@ -1,0 +1,2 @@
+-- Placeholder migration kept to match remote history version 20260401141023.
+-- Intentionally empty.

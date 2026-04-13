@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check \"c:/Users/vitor.almeida.ORGANNACT/Documents/controle-treinamentos/controle-salesforce/public/js/app/01-core.js\")",
+      "Bash(node --check \"c:/Users/vitor.almeida.ORGANNACT/Documents/controle-treinamentos/controle-salesforce/public/js/app/02-rendering.js\")",
+      "Bash(node --check \"c:/Users/vitor.almeida.ORGANNACT/Documents/controle-treinamentos/controle-salesforce/public/js/app/03-modals-users.js\")",
+      "Bash(node --check \"c:/Users/vitor.almeida.ORGANNACT/Documents/controle-treinamentos/controle-salesforce/public/js/app/04-actions-init.js\")"
+    ]
+  }
+}

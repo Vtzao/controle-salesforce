@@ -20,8 +20,11 @@ const state = {
     userListFilters: {
         categoryId: 'all',
         role: 'all',
+        active: 'all',
         sort: 'name-asc',
     },
+    userBulkSelectionMode: false,
+    selectedUserIds: {},
     reportMatrixFilters: {
         role: 'all',
         selectedCategoryIds: [],
@@ -67,6 +70,10 @@ const state = {
         saveStatus: false,
         deleteCategory: false,
         deleteUser: false,
+        toggleUserActive: false,
+        bulkUserAction: false,
+        deleteAdmin: false,
+        saveAdminRecord: false,
     },
     rpcAvailability: {
         saveCategoryWithModules: null,
@@ -75,15 +82,32 @@ const state = {
     statusDraft: {},
     selectedStatusCells: {},
     statusSelectionMode: false,
+    statusSelectionDrag: {
+        active: false,
+        shouldSelect: true,
+        lastKey: '',
+        moved: false,
+        suppressClick: false,
+    },
     bulkStatusTarget: 'Concluído',
     skipNextViewAnimation: false,
     currentViewAnimationClass: 'animate-fade-in',
     dashboardAnimationValues: {},
+    mobileMenuOpen: false,
+    savedFlashKeys: new Set(),
+    mobileMatrixPages: {},
+    userListPage: 0,
+    admins: [],
+    adminListError: '',
+    suppressAuthStateReactions: false,
 };
 let loadDataPromise = null;
+const USER_PAGE_SIZE = 20;
 let fixedMatrixScrollbarCleanup = null;
 let fixedMatrixScrollbarFrame = null;
 let statusSelectionHelpTimeout = null;
+let statusSelectionHelpCleanup = null;
+let statusSelectionHelpFrame = null;
 
 const STATUS_SELECTION_HELP_ID = 'status-selection-help';
 const STATUS_SELECTION_HELP_HIGHLIGHT_CLASS = 'status-selection-help-highlight';
@@ -180,14 +204,17 @@ function setShellVisibility(isAuthenticated) {
     document.getElementById('auth-view').classList.add('hidden');
     document.getElementById('app-shell').classList.toggle('hidden', !shellVisible);
 
-    const publicBlock = document.getElementById('sidebar-public-block');
-    const sessionBlock = document.getElementById('sidebar-session-block');
-    if (publicBlock) {
-        publicBlock.classList.toggle('hidden', isAuthenticated);
+    document.querySelectorAll('.public-session-block').forEach((element) => {
+        element.classList.toggle('hidden', isAuthenticated);
+    });
+    document.querySelectorAll('.auth-session-block').forEach((element) => {
+        element.classList.toggle('hidden', !isAuthenticated);
+    });
+
+    if (!shellVisible) {
+        state.mobileMenuOpen = false;
     }
-    if (sessionBlock) {
-        sessionBlock.classList.toggle('hidden', !isAuthenticated);
-    }
+    updateMobileMenuState();
 }
 
 function formatError(error, fallback) {
@@ -235,19 +262,30 @@ function setButtonLoading(buttonId, isLoading, loadingLabel = 'Processando...') 
     }
 
     if (isLoading) {
-        if (!button.dataset.originalLabel) {
-            button.dataset.originalLabel = button.textContent.trim();
+        if (!button.dataset.originalHtml) {
+            button.dataset.originalHtml = button.innerHTML;
         }
         button.disabled = true;
         button.classList.add('opacity-70', 'cursor-not-allowed');
-        button.textContent = loadingLabel;
+        button.innerHTML = `
+            <span class="inline-flex items-center justify-center gap-2">
+                <i data-lucide="loader-circle" class="w-4 h-4 animate-spin"></i>
+                <span>${escapeHtml(loadingLabel)}</span>
+            </span>
+        `;
+        if (window.lucide?.createIcons) {
+            window.lucide.createIcons();
+        }
         return;
     }
 
     button.disabled = false;
     button.classList.remove('opacity-70', 'cursor-not-allowed');
-    if (button.dataset.originalLabel) {
-        button.textContent = button.dataset.originalLabel;
+    if (button.dataset.originalHtml) {
+        button.innerHTML = button.dataset.originalHtml;
+        if (window.lucide?.createIcons) {
+            window.lucide.createIcons();
+        }
     }
 }
 
@@ -275,12 +313,24 @@ function toUserFriendlyError(error, fallback) {
         return 'O ID externo do usuário já está em uso.';
     }
 
+    if (code === '23505' && (message.includes('portal_admins_email_key') || detail.includes('portal_admins_email_key'))) {
+        return 'Já existe um admin com esse e-mail.';
+    }
+
     if (code === '23514' && (message.includes('collaborator_module_status_status_check') || detail.includes('collaborator_module_status_status_check'))) {
         return 'Seu schema do Supabase ainda não aceita o status "Agendado". Atualize o SQL da tabela collaborator_module_status.';
     }
 
+    if (message.includes('user already registered')) {
+        return 'Já existe um usuário com esse e-mail.';
+    }
+
     if (message.includes('jwt') || message.includes('not authenticated')) {
         return 'Sessão expirada. Faça login novamente.';
+    }
+
+    if (code === '42501' || message.includes('row-level security') || message.includes('permission denied')) {
+        return 'Sem permissão para essa ação no banco (RLS).';
     }
 
     return fallback;
@@ -384,13 +434,24 @@ function getRoleSegment(roleLabel) {
     return 'Operacional';
 }
 
-function getFilteredUsers() {
+function isUserActive(user) {
+    return user?.isActive !== false;
+}
+
+function getUsersByActivity(options = {}) {
+    const includeInactive = options.includeInactive === true;
+    return includeInactive ? state.users : state.users.filter((user) => isUserActive(user));
+}
+
+function getFilteredUsers(options = {}) {
+    const includeInactive = options.includeInactive === true;
+    const sourceUsers = getUsersByActivity({ includeInactive });
     const query = state.searchQuery.trim().toLowerCase();
     if (!query) {
-        return state.users;
+        return sourceUsers;
     }
 
-    return state.users.filter((user) => {
+    return sourceUsers.filter((user) => {
         const categoryNames = user.categoryIds
             .map((categoryId) => state.categories.find((category) => category.id === categoryId)?.name || '')
             .join(' ')
@@ -398,6 +459,7 @@ function getFilteredUsers() {
 
         return `${user.firstName} ${user.lastName}`.trim().toLowerCase().includes(query)
             || user.role.toLowerCase().includes(query)
+            || String(user.email || '').toLowerCase().includes(query)
             || user.externalId.toLowerCase().includes(query)
             || categoryNames.includes(query);
     });
@@ -611,16 +673,7 @@ function getMatrixFiltersMarkup(scope) {
 
     return `
         <div class="bg-white rounded-2xl border border-slate-100 p-4 space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div class="md:col-span-2">
-                    <label class="text-[10px] font-bold text-slate-400 uppercase">Pesquisar</label>
-                    <input
-                        value="${escapeAttr(state.searchQuery)}"
-                        oninput="handleSearch(this.value)"
-                        class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 outline-none focus:border-indigo-400"
-                        placeholder="Nome, cargo ou categoria"
-                    >
-                </div>
+            <div class="grid grid-cols-1 gap-3">
                 <div>
                     <label class="text-[10px] font-bold text-slate-400 uppercase">Selecione os Cargos</label>
                     <select onchange="setMatrixRoleFilter('${escapeAttr(scope)}', this.value)" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 outline-none focus:border-indigo-400">
@@ -711,7 +764,7 @@ function getMatrixFiltersMarkup(scope) {
 function getPublicUsersWithProgress() {
     const collator = new Intl.Collator('pt-BR', { sensitivity: 'base' });
 
-    return state.users
+    return getUsersByActivity()
         .map((user) => {
             let totalModules = 0;
             let completedModules = 0;
@@ -904,12 +957,20 @@ function togglePublicUserModules(userId) {
 }
 
 function getUsersForManagement() {
-    const filtered = getFilteredUsers().filter((user) => {
+    const filtered = getFilteredUsers({ includeInactive: true }).filter((user) => {
         if (state.userListFilters.categoryId !== 'all' && !user.categoryIds.includes(state.userListFilters.categoryId)) {
             return false;
         }
 
         if (state.userListFilters.role !== 'all' && user.role !== state.userListFilters.role) {
+            return false;
+        }
+
+        if (state.userListFilters.active === 'active' && !isUserActive(user)) {
+            return false;
+        }
+
+        if (state.userListFilters.active === 'inactive' && isUserActive(user)) {
             return false;
         }
 
@@ -935,6 +996,30 @@ function getUsersForManagement() {
     });
 
     return filtered;
+}
+
+function getSelectedUserIds() {
+    return Object.keys(state.selectedUserIds || {}).filter((id) => Boolean(state.selectedUserIds[id]));
+}
+
+function isUserSelectedForBulk(userId) {
+    return Boolean(state.selectedUserIds?.[userId]);
+}
+
+function getSelectedUsersForBulk() {
+    const selected = new Set(getSelectedUserIds());
+    return state.users.filter((user) => selected.has(user.id));
+}
+
+function pruneUserBulkSelection() {
+    const validUserIds = new Set(state.users.map((user) => user.id));
+    const nextSelection = {};
+    for (const userId of getSelectedUserIds()) {
+        if (validUserIds.has(userId)) {
+            nextSelection[userId] = true;
+        }
+    }
+    state.selectedUserIds = nextSelection;
 }
 
 function getCurrentCategory() {
@@ -1021,6 +1106,11 @@ function isStatusCellSelected(userId, categoryId, moduleId) {
 
 function clearStatusSelection() {
     state.selectedStatusCells = {};
+    state.statusSelectionDrag.active = false;
+    state.statusSelectionDrag.shouldSelect = true;
+    state.statusSelectionDrag.lastKey = '';
+    state.statusSelectionDrag.moved = false;
+    state.statusSelectionDrag.suppressClick = false;
 }
 
 function clearStatusSelectionHelp() {
@@ -1028,16 +1118,23 @@ function clearStatusSelectionHelp() {
         window.clearTimeout(statusSelectionHelpTimeout);
         statusSelectionHelpTimeout = null;
     }
+    if (statusSelectionHelpFrame) {
+        window.cancelAnimationFrame(statusSelectionHelpFrame);
+        statusSelectionHelpFrame = null;
+    }
+    if (statusSelectionHelpCleanup) {
+        statusSelectionHelpCleanup();
+        statusSelectionHelpCleanup = null;
+    }
 
     const helpBubble = document.getElementById(STATUS_SELECTION_HELP_ID);
     if (helpBubble) {
         helpBubble.remove();
     }
 
-    const highlightedCell = document.querySelector(`.${STATUS_SELECTION_HELP_HIGHLIGHT_CLASS}`);
-    if (highlightedCell) {
+    document.querySelectorAll(`.${STATUS_SELECTION_HELP_HIGHLIGHT_CLASS}`).forEach((highlightedCell) => {
         highlightedCell.classList.remove('ring-4', 'ring-indigo-300', 'ring-offset-1', STATUS_SELECTION_HELP_HIGHLIGHT_CLASS);
-    }
+    });
 }
 
 function showStatusSelectionHelp() {
@@ -1060,32 +1157,64 @@ function showStatusSelectionHelp() {
     bubble.appendChild(arrow);
     document.body.appendChild(bubble);
 
-    const targetRect = firstSelectableCell.getBoundingClientRect();
-    const bubbleRect = bubble.getBoundingClientRect();
-    const viewportPadding = 8;
-    const bubbleOffset = 10;
+    const positionHelpBubble = () => {
+        if (!bubble.isConnected) {
+            return;
+        }
 
-    let top = targetRect.top - bubbleRect.height - bubbleOffset;
-    let renderAbove = true;
-    if (top < viewportPadding) {
-        top = targetRect.bottom + bubbleOffset;
-        renderAbove = false;
-    }
+        const highlightedCell = document.querySelector(`.${STATUS_SELECTION_HELP_HIGHLIGHT_CLASS}`);
+        if (!highlightedCell) {
+            clearStatusSelectionHelp();
+            return;
+        }
 
-    let left = targetRect.left + (targetRect.width / 2) - (bubbleRect.width / 2);
-    left = Math.max(viewportPadding, Math.min(left, window.innerWidth - bubbleRect.width - viewportPadding));
+        const targetRect = highlightedCell.getBoundingClientRect();
+        const bubbleRect = bubble.getBoundingClientRect();
+        const viewportPadding = 8;
+        const bubbleOffset = 10;
 
-    bubble.style.top = `${top}px`;
-    bubble.style.left = `${left}px`;
+        let top = targetRect.top - bubbleRect.height - bubbleOffset;
+        let renderAbove = true;
+        if (top < viewportPadding) {
+            top = targetRect.bottom + bubbleOffset;
+            renderAbove = false;
+        }
 
-    const pointerCenterX = targetRect.left + (targetRect.width / 2);
-    const arrowLeft = Math.max(8, Math.min(bubbleRect.width - 18, pointerCenterX - left - 5));
-    arrow.style.left = `${arrowLeft}px`;
-    if (renderAbove) {
-        arrow.style.bottom = '-5px';
-    } else {
-        arrow.style.top = '-5px';
-    }
+        let left = targetRect.left + (targetRect.width / 2) - (bubbleRect.width / 2);
+        left = Math.max(viewportPadding, Math.min(left, window.innerWidth - bubbleRect.width - viewportPadding));
+
+        bubble.style.top = `${top}px`;
+        bubble.style.left = `${left}px`;
+
+        const pointerCenterX = targetRect.left + (targetRect.width / 2);
+        const arrowLeft = Math.max(8, Math.min(bubbleRect.width - 18, pointerCenterX - left - 5));
+        arrow.style.left = `${arrowLeft}px`;
+        arrow.style.top = '';
+        arrow.style.bottom = '';
+        if (renderAbove) {
+            arrow.style.bottom = '-5px';
+        } else {
+            arrow.style.top = '-5px';
+        }
+    };
+
+    const scheduleHelpBubblePosition = () => {
+        if (statusSelectionHelpFrame) {
+            return;
+        }
+        statusSelectionHelpFrame = window.requestAnimationFrame(() => {
+            statusSelectionHelpFrame = null;
+            positionHelpBubble();
+        });
+    };
+
+    positionHelpBubble();
+    window.addEventListener('scroll', scheduleHelpBubblePosition, true);
+    window.addEventListener('resize', scheduleHelpBubblePosition);
+    statusSelectionHelpCleanup = () => {
+        window.removeEventListener('scroll', scheduleHelpBubblePosition, true);
+        window.removeEventListener('resize', scheduleHelpBubblePosition);
+    };
 
     statusSelectionHelpTimeout = window.setTimeout(() => {
         clearStatusSelectionHelp();
@@ -1296,6 +1425,9 @@ function pickScrollableMatrixContainer() {
 
 function setupFixedMatrixScrollbar() {
     teardownFixedMatrixScrollbar();
+    if (window.innerWidth < 1024) {
+        return;
+    }
 
     const dock = document.getElementById('matrix-scrollbar-dock');
     const track = document.getElementById('matrix-scrollbar-track');
@@ -1324,6 +1456,7 @@ function setupFixedMatrixScrollbar() {
         syncing = false;
     };
 
+    let layoutFrame = null;
     const refreshLayout = () => {
         if (!matrixScroller.isConnected || !isElementVisible(matrixScroller)) {
             dock.classList.add('hidden');
@@ -1338,16 +1471,11 @@ function setupFixedMatrixScrollbar() {
         const rect = matrixScroller.getBoundingClientRect();
         const header = document.querySelector('main header');
         const headerBottom = header ? header.getBoundingClientRect().bottom : 0;
-        const firstBodyCell = matrixScroller.querySelector('tbody tr td');
-        if (!firstBodyCell) {
-            dock.classList.add('hidden');
-            return;
-        }
 
-        const firstBodyCellRect = firstBodyCell.getBoundingClientRect();
-        const firstNameVisible = firstBodyCellRect.bottom > headerBottom && firstBodyCellRect.top < window.innerHeight;
-        const beforeTableEnd = rect.bottom >= (headerBottom + 40);
-        if (!firstNameVisible || !beforeTableEnd) {
+        const viewportTop = Math.max(rect.top, headerBottom);
+        const viewportBottom = Math.min(rect.bottom, window.innerHeight);
+        const visibleHeight = viewportBottom - viewportTop;
+        if (visibleHeight < 72) {
             dock.classList.add('hidden');
             return;
         }
@@ -1358,26 +1486,39 @@ function setupFixedMatrixScrollbar() {
         syncFromMatrix();
         dock.classList.remove('hidden');
     };
+    const scheduleRefreshLayout = () => {
+        if (layoutFrame) {
+            return;
+        }
+        layoutFrame = window.requestAnimationFrame(() => {
+            layoutFrame = null;
+            refreshLayout();
+        });
+    };
 
     matrixScroller.addEventListener('scroll', syncFromMatrix);
     track.addEventListener('scroll', syncFromDock);
-    window.addEventListener('resize', refreshLayout);
-    window.addEventListener('scroll', refreshLayout);
+    window.addEventListener('resize', scheduleRefreshLayout);
+    window.addEventListener('scroll', scheduleRefreshLayout, { passive: true });
 
-    const resizeObserver = new ResizeObserver(refreshLayout);
+    const resizeObserver = new ResizeObserver(scheduleRefreshLayout);
     resizeObserver.observe(matrixScroller);
     const mainView = document.getElementById('main-view');
     if (mainView) {
         resizeObserver.observe(mainView);
     }
 
-    refreshLayout();
+    scheduleRefreshLayout();
 
     fixedMatrixScrollbarCleanup = () => {
+        if (layoutFrame) {
+            window.cancelAnimationFrame(layoutFrame);
+            layoutFrame = null;
+        }
         matrixScroller.removeEventListener('scroll', syncFromMatrix);
         track.removeEventListener('scroll', syncFromDock);
-        window.removeEventListener('resize', refreshLayout);
-        window.removeEventListener('scroll', refreshLayout);
+        window.removeEventListener('resize', scheduleRefreshLayout);
+        window.removeEventListener('scroll', scheduleRefreshLayout);
         resizeObserver.disconnect();
     };
 }
@@ -1391,6 +1532,10 @@ function scheduleFixedMatrixScrollbarSetup() {
 }
 
 function render() {
+    if (window.innerWidth >= 1024 && state.mobileMenuOpen) {
+        state.mobileMenuOpen = false;
+    }
+
     setShellVisibility(isAdminSession());
     updateSyncIndicator();
     if (!state.statusSelectionMode) {
@@ -1417,6 +1562,7 @@ function render() {
     updateSessionLabels();
     updateNavigationVisibility();
     updateSidebarState();
+    updateMobileMenuState();
     const globalSearchInput = document.getElementById('global-search');
     if (globalSearchInput && globalSearchInput.value !== state.searchQuery) {
         globalSearchInput.value = state.searchQuery;
@@ -1454,8 +1600,33 @@ function render() {
 
     lucide.createIcons();
     animateDashboardIndicators();
+    if (typeof initializeDashboardPieInteractions === 'function') {
+        initializeDashboardPieInteractions();
+    }
     restoreScrollPositions(previousScroll);
     scheduleFixedMatrixScrollbarSetup();
+    applyFlashCells();
+}
+
+function applyFlashCells() {
+    if (!state.savedFlashKeys.size) {
+        return;
+    }
+    const keys = state.savedFlashKeys;
+    state.savedFlashKeys = new Set();
+    window.requestAnimationFrame(() => {
+        keys.forEach((key) => {
+            const [userId, categoryId, moduleId] = key.split('::');
+            const el = document.querySelector(
+                `[data-status-user-id="${CSS.escape(userId)}"][data-status-category-id="${CSS.escape(categoryId)}"][data-status-module-id="${CSS.escape(moduleId)}"]`
+            );
+            if (el) {
+                el.classList.remove('cell-saved-flash');
+                void el.offsetWidth;
+                el.classList.add('cell-saved-flash');
+            }
+        });
+    });
 }
 
 function renderInitialLoading(container) {
@@ -1541,25 +1712,49 @@ function renderAuthView(messageHtml) {
                                 `).join('')}
                             </div>
                         ` : publicUsers.length ? `
-                            <div class="fixed-scroll-target max-h-[360px] overflow-auto" data-scroll-key="auth-trained-users-table">
+                            <div class="lg:hidden p-4 space-y-3 bg-slate-50/60">
+                                ${publicUsers.map((user) => `
+                                    <article class="rounded-2xl border border-slate-200 bg-white p-3 space-y-2">
+                                        <div>
+                                            <p class="text-sm font-bold text-slate-800 truncate">${escapeHtml(user.fullName)}</p>
+                                            <p class="text-[10px] text-slate-400 font-bold uppercase">${escapeHtml(user.role)}</p>
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between text-[11px] font-bold text-slate-500">
+                                                <span>${user.completedModules}/${user.totalModules || user.completedModules}</span>
+                                                <span>${user.progress}%</span>
+                                            </div>
+                                            <div class="mt-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+                                                <div class="h-full rounded-full bg-gradient-to-r from-indigo-500 to-sky-500" style="width:${Math.min(100, Math.max(0, user.progress))}%;"></div>
+                                            </div>
+                                        </div>
+                                        <div class="text-xs text-slate-500">
+                                            ${user.completedCategories.length
+                                                ? user.completedCategories.map((category) => `<span class="inline-flex mr-1 mb-1 px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">${escapeHtml(category)}</span>`).join('')
+                                                : '<span class="text-slate-400">-</span>'}
+                                        </div>
+                                    </article>
+                                `).join('')}
+                            </div>
+                            <div class="hidden lg:block fixed-scroll-target max-h-[360px] overflow-auto" data-scroll-key="auth-trained-users-table">
                                 <table class="w-full min-w-max text-left">
                                     <thead class="bg-slate-50 border-b border-slate-100">
                                         <tr>
-                                            <th class="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500">Nome</th>
-                                            <th class="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500">Cargo</th>
-                                            <th class="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500">Conclusão</th>
-                                            <th class="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500">Categorias</th>
+                                            <th class="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-500">Nome</th>
+                                            <th class="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-500">Cargo</th>
+                                            <th class="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-500">Conclusão</th>
+                                            <th class="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-500">Categorias</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-100">
                                         ${publicUsers.map((user) => `
                                             <tr>
-                                                <td class="px-6 py-3">
-                                                    <p class="text-sm font-bold text-slate-800">${escapeHtml(user.fullName)}</p>
+                                                <td class="px-4 py-2.5">
+                                                    <p class="text-[13px] font-bold text-slate-800">${escapeHtml(user.fullName)}</p>
                                                 </td>
-                                                <td class="px-6 py-3 text-sm text-slate-500">${escapeHtml(user.role)}</td>
-                                                <td class="px-6 py-3">
-                                                    <div class="min-w-[160px]">
+                                                <td class="px-4 py-2.5 text-[13px] text-slate-500">${escapeHtml(user.role)}</td>
+                                                <td class="px-4 py-2.5">
+                                                    <div class="min-w-[132px]">
                                                         <div class="flex items-center justify-between text-[11px] font-bold text-slate-500">
                                                             <span>${user.completedModules}/${user.totalModules || user.completedModules}</span>
                                                             <span>${user.progress}%</span>
@@ -1569,7 +1764,7 @@ function renderAuthView(messageHtml) {
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td class="px-6 py-3 text-xs text-slate-500">
+                                                <td class="px-4 py-2.5 text-[11px] text-slate-500">
                                                     ${user.completedCategories.length
                                                         ? user.completedCategories.map((category) => `<span class="inline-flex mr-1 mb-1 px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">${escapeHtml(category)}</span>`).join('')
                                                         : '<span class="text-slate-400">-</span>'}
@@ -1605,8 +1800,16 @@ function renderAuthView(messageHtml) {
                         </div>
                         <div>
                             <label class="block text-[11px] font-black text-slate-400 uppercase tracking-[0.24em] mb-2">Senha</label>
-                            <input id="login-password" type="password" class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 outline-none focus:border-indigo-400" placeholder="Sua senha" required>
+                            <div class="relative">
+                                <input id="login-password" type="password" class="w-full px-4 py-3 pr-11 rounded-2xl bg-slate-50 border border-slate-200 outline-none focus:border-indigo-400" placeholder="Sua senha" required>
+                                <button type="button" onclick="togglePasswordVisibility('login-password', this)" class="absolute inset-y-0 right-2 my-auto h-8 w-8 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg" aria-label="Mostrar senha">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </button>
+                            </div>
                         </div>
+                        <button type="button" onclick="requestPasswordReset()" class="w-full text-sm font-bold text-indigo-600 hover:text-indigo-700">
+                            Esqueci minha senha
+                        </button>
                         <button id="login-submit-btn" class="w-full py-3.5 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
                             Entrar no painel
                         </button>
@@ -1622,12 +1825,11 @@ function renderAuthView(messageHtml) {
 function updateSessionLabels() {
     const email = state.session?.user?.email || 'Visitante';
     const headerModeTitle = document.getElementById('header-mode-title');
-    const sidebarEmail = document.getElementById('sidebar-session-email');
     const headerEmail = document.getElementById('header-session-email');
 
-    if (sidebarEmail) {
-        sidebarEmail.textContent = isAdminSession() ? email : 'Consulta pública';
-    }
+    document.querySelectorAll('[data-session-email]').forEach((element) => {
+        element.textContent = isAdminSession() ? email : 'Consulta pública';
+    });
     if (headerEmail) {
         headerEmail.textContent = isAdminSession() ? email : 'Consulta pública';
     }
@@ -1645,7 +1847,9 @@ function updateNavigationVisibility() {
         element.classList.toggle('hidden', isAuthenticated);
     });
     if (isAuthenticated) {
-        document.getElementById('nav-public-overview')?.classList.remove('hidden');
+        document.querySelectorAll('[data-nav-tab="public-overview"]').forEach((element) => {
+            element.classList.remove('hidden');
+        });
     }
 }
 
@@ -1685,12 +1889,64 @@ function updateSyncIndicator() {
 
 function updateSidebarState() {
     document.querySelectorAll('.sidebar-btn').forEach((button) => button.classList.remove('sidebar-active'));
-    const activeId = state.activeTab === 'category-detail'
-        ? 'nav-categories'
-        : state.activeTab === 'public-overview'
-            ? 'nav-public-overview'
-            : `nav-${state.activeTab}`;
-    document.getElementById(activeId)?.classList.add('sidebar-active');
+    const activeTab = state.activeTab === 'category-detail' ? 'categories' : state.activeTab;
+    document.querySelectorAll(`[data-nav-tab="${activeTab}"]`).forEach((button) => {
+        button.classList.add('sidebar-active');
+    });
 }
 
+function updateMobileMenuState() {
+    const overlay = document.getElementById('mobile-menu-overlay');
+    if (!overlay) {
+        return;
+    }
 
+    const canOpenMobileMenu = window.innerWidth < 1024;
+    const isOpen = Boolean(state.mobileMenuOpen) && canOpenMobileMenu;
+    overlay.dataset.open = isOpen ? 'true' : 'false';
+    overlay.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    document.body.classList.toggle('menu-open', isOpen);
+}
+
+function closeMobileMenu() {
+    if (!state.mobileMenuOpen) {
+        updateMobileMenuState();
+        return;
+    }
+
+    state.mobileMenuOpen = false;
+    updateMobileMenuState();
+}
+
+function toggleMobileMenu() {
+    if (window.innerWidth >= 1024) {
+        state.mobileMenuOpen = false;
+        updateMobileMenuState();
+        return;
+    }
+
+    state.mobileMenuOpen = !state.mobileMenuOpen;
+    updateMobileMenuState();
+}
+
+function switchTabFromMenu(tabId) {
+    switchTab(tabId);
+    closeMobileMenu();
+}
+
+window.addEventListener('resize', () => {
+    if (window.innerWidth >= 1024 && state.mobileMenuOpen) {
+        state.mobileMenuOpen = false;
+    }
+    updateMobileMenuState();
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') {
+        return;
+    }
+    if (!state.mobileMenuOpen) {
+        return;
+    }
+    closeMobileMenu();
+});

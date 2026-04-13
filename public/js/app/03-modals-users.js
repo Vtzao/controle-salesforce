@@ -55,10 +55,14 @@
                         <input id="user-lname" value="${escapeAttr(user?.lastName || '')}" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 outline-none">
                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
                         <label class="text-[10px] font-bold text-slate-400 uppercase">Cargo</label>
                         <input id="user-role" value="${escapeAttr(user?.role || '')}" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase">E-mail</label>
+                        <input id="user-email" type="email" value="${escapeAttr(user?.email || '')}" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 outline-none" placeholder="usuario@empresa.com">
                     </div>
                     <div>
                         <label class="text-[10px] font-bold text-slate-400 uppercase">ID do Usuário (opcional)</label>
@@ -85,6 +89,9 @@
         title.textContent = 'Painel de Admin';
         content.innerHTML = `
             <div class="space-y-4">
+                <div class="flex justify-center pb-1">
+                    <img src="./img/logo-preto.png" alt="Logo Orgadata" class="h-14 w-auto object-contain" loading="eager" decoding="async">
+                </div>
                 <p class="text-sm text-slate-500">Entre com um usuário administrador para liberar o CRUD completo.</p>
                 <form class="space-y-4" onsubmit="login(event)">
                     <div>
@@ -93,12 +100,163 @@
                     </div>
                     <div>
                         <label class="block text-[11px] font-black text-slate-400 uppercase tracking-[0.24em] mb-2">Senha</label>
-                        <input id="login-password" type="password" class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 outline-none focus:border-indigo-400" placeholder="Sua senha" required>
+                        <div class="relative">
+                            <input id="login-password" type="password" class="w-full px-4 py-3 pr-11 rounded-2xl bg-slate-50 border border-slate-200 outline-none focus:border-indigo-400" placeholder="Sua senha" required>
+                            <button type="button" onclick="togglePasswordVisibility('login-password', this)" class="absolute inset-y-0 right-2 my-auto h-8 w-8 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg" aria-label="Mostrar senha">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </button>
+                        </div>
                     </div>
+                    <button type="button" onclick="requestPasswordReset()" class="w-full text-sm font-bold text-indigo-600 hover:text-indigo-700">
+                        Esqueci minha senha
+                    </button>
                     <button id="login-submit-btn" class="w-full py-3.5 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
                         Entrar no painel
                     </button>
                 </form>
+            </div>
+        `;
+    } else if (type === 'admin-create') {
+        title.textContent = 'Criar Usuário Admin';
+        content.innerHTML = `
+            <div class="space-y-4">
+                <p class="text-sm text-slate-500">Crie um novo acesso administrativo para o portal.</p>
+                <div>
+                    <label class="block text-[11px] font-black text-slate-400 uppercase tracking-[0.24em] mb-2">E-mail do admin</label>
+                    <input id="admin-create-email" type="email" class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 outline-none focus:border-indigo-400" placeholder="novo-admin@empresa.com" required>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-black text-slate-400 uppercase tracking-[0.24em] mb-2">Senha</label>
+                    <div class="relative">
+                        <input id="admin-create-password" type="password" class="w-full px-4 py-3 pr-11 rounded-2xl bg-slate-50 border border-slate-200 outline-none focus:border-indigo-400" placeholder="Mínimo 8 caracteres" required>
+                        <button type="button" onclick="togglePasswordVisibility('admin-create-password', this)" class="absolute inset-y-0 right-2 my-auto h-8 w-8 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg" aria-label="Mostrar senha">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-black text-slate-400 uppercase tracking-[0.24em] mb-2">Confirmar senha</label>
+                    <div class="relative">
+                        <input id="admin-create-password-confirm" type="password" class="w-full px-4 py-3 pr-11 rounded-2xl bg-slate-50 border border-slate-200 outline-none focus:border-indigo-400" placeholder="Repita a senha" required>
+                        <button type="button" onclick="togglePasswordVisibility('admin-create-password-confirm', this)" class="absolute inset-y-0 right-2 my-auto h-8 w-8 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg" aria-label="Mostrar senha">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 pt-1">
+                    <button type="button" onclick="closeModal()" class="w-full sm:w-40 py-3 bg-white text-slate-600 rounded-xl font-bold border border-slate-200 hover:bg-slate-50">
+                        Cancelar
+                    </button>
+                    <button id="admin-create-save-btn" type="button" onclick="createAdminUserAccount()" class="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                        Criar Admin
+                    </button>
+                </div>
+            </div>
+        `;
+    } else if (type === 'admin-edit') {
+        if (!isAdminSession()) {
+            showToast('Apenas administradores podem editar admins.', 'error');
+            return;
+        }
+
+        const admin = state.admins.find((item) => item.id === id);
+        if (!admin) {
+            showToast('Admin não encontrado.', 'error');
+            return;
+        }
+
+        const isSelf = admin.email === state.session?.user?.email;
+        if (isSelf) {
+            showToast('Você não pode editar seu próprio registro aqui.', 'info');
+            return;
+        }
+
+        title.textContent = 'Editar Admin';
+        content.innerHTML = `
+            <div class="space-y-4">
+                <p class="text-sm text-slate-500">Atualize o e-mail de acesso administrativo.</p>
+                <div>
+                    <label class="block text-[11px] font-black text-slate-400 uppercase tracking-[0.24em] mb-2">E-mail do admin</label>
+                    <input id="admin-edit-email" type="email" value="${escapeAttr(admin.email || '')}" class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 outline-none focus:border-indigo-400" placeholder="admin@empresa.com" required>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 pt-1">
+                    <button type="button" onclick="closeModal()" class="w-full sm:w-40 py-3 bg-white text-slate-600 rounded-xl font-bold border border-slate-200 hover:bg-slate-50">
+                        Cancelar
+                    </button>
+                    <button id="admin-edit-save-btn" type="button" onclick="updateAdminRecord('${escapeAttr(admin.id)}')" class="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                        Salvar alterações
+                    </button>
+                </div>
+            </div>
+        `;
+    } else if (type === 'password-recovery') {
+        title.textContent = 'Redefinir Senha';
+        content.innerHTML = `
+            <div class="space-y-4">
+                <p class="text-sm text-slate-500">Defina sua nova senha para concluir a recuperação de acesso.</p>
+                <div>
+                    <label class="block text-[11px] font-black text-slate-400 uppercase tracking-[0.24em] mb-2">Nova senha</label>
+                    <div class="relative">
+                        <input id="recovery-password" type="password" class="w-full px-4 py-3 pr-11 rounded-2xl bg-slate-50 border border-slate-200 outline-none focus:border-indigo-400" placeholder="Mínimo 8 caracteres" required>
+                        <button type="button" onclick="togglePasswordVisibility('recovery-password', this)" class="absolute inset-y-0 right-2 my-auto h-8 w-8 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg" aria-label="Mostrar senha">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-black text-slate-400 uppercase tracking-[0.24em] mb-2">Confirmar nova senha</label>
+                    <div class="relative">
+                        <input id="recovery-password-confirm" type="password" class="w-full px-4 py-3 pr-11 rounded-2xl bg-slate-50 border border-slate-200 outline-none focus:border-indigo-400" placeholder="Repita a senha" required>
+                        <button type="button" onclick="togglePasswordVisibility('recovery-password-confirm', this)" class="absolute inset-y-0 right-2 my-auto h-8 w-8 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg" aria-label="Mostrar senha">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 pt-1">
+                    <button type="button" onclick="closeModal()" class="w-full sm:w-40 py-3 bg-white text-slate-600 rounded-xl font-bold border border-slate-200 hover:bg-slate-50">
+                        Cancelar
+                    </button>
+                    <button id="recovery-save-btn" type="button" onclick="completePasswordRecovery()" class="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                        Salvar nova senha
+                    </button>
+                </div>
+            </div>
+        `;
+    } else if (type === 'change-password') {
+        if (!isAdminSession()) {
+            showToast('Faça login como admin para alterar a senha.', 'error');
+            return;
+        }
+        title.textContent = 'Alterar Minha Senha';
+        content.innerHTML = `
+            <div class="space-y-4">
+                <p class="text-sm text-slate-500">Defina uma nova senha para sua conta atual.</p>
+                <div>
+                    <label class="block text-[11px] font-black text-slate-400 uppercase tracking-[0.24em] mb-2">Nova senha</label>
+                    <div class="relative">
+                        <input id="change-password" type="password" class="w-full px-4 py-3 pr-11 rounded-2xl bg-slate-50 border border-slate-200 outline-none focus:border-indigo-400" placeholder="Mínimo 8 caracteres" required>
+                        <button type="button" onclick="togglePasswordVisibility('change-password', this)" class="absolute inset-y-0 right-2 my-auto h-8 w-8 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg" aria-label="Mostrar senha">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-black text-slate-400 uppercase tracking-[0.24em] mb-2">Confirmar nova senha</label>
+                    <div class="relative">
+                        <input id="change-password-confirm" type="password" class="w-full px-4 py-3 pr-11 rounded-2xl bg-slate-50 border border-slate-200 outline-none focus:border-indigo-400" placeholder="Repita a senha" required>
+                        <button type="button" onclick="togglePasswordVisibility('change-password-confirm', this)" class="absolute inset-y-0 right-2 my-auto h-8 w-8 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg" aria-label="Mostrar senha">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 pt-1">
+                    <button type="button" onclick="closeModal()" class="w-full sm:w-40 py-3 bg-white text-slate-600 rounded-xl font-bold border border-slate-200 hover:bg-slate-50">
+                        Cancelar
+                    </button>
+                    <button id="change-password-save-btn" type="button" onclick="changeOwnPassword()" class="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                        Salvar nova senha
+                    </button>
+                </div>
             </div>
         `;
     }
@@ -109,10 +267,81 @@
             ? 'cat-name'
             : type === 'user'
                 ? 'user-fname'
-                : 'login-email';
+                : type === 'admin-create'
+                    ? 'admin-create-email'
+                    : type === 'admin-edit'
+                        ? 'admin-edit-email'
+                    : type === 'password-recovery'
+                        ? 'recovery-password'
+                        : type === 'change-password'
+                            ? 'change-password'
+                        : 'login-email';
         document.getElementById(targetId)?.focus();
     }, 0);
     lucide.createIcons();
+    applyModalSubmitShortcut(type, id);
+}
+
+function togglePasswordVisibility(inputId, button) {
+    const input = document.getElementById(inputId);
+    if (!input || !button) {
+        return;
+    }
+
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    button.setAttribute('aria-label', isPassword ? 'Ocultar senha' : 'Mostrar senha');
+    button.innerHTML = `<i data-lucide="${isPassword ? 'eye-off' : 'eye'}" class="w-4 h-4"></i>`;
+    lucide.createIcons();
+    input.focus();
+}
+
+function getModalSubmitAction(type, id) {
+    if (type === 'user') {
+        return saveUser;
+    }
+    if (type === 'admin-create') {
+        return createAdminUserAccount;
+    }
+    if (type === 'admin-edit') {
+        return () => updateAdminRecord(id);
+    }
+    if (type === 'password-recovery') {
+        return completePasswordRecovery;
+    }
+    if (type === 'change-password') {
+        return changeOwnPassword;
+    }
+    return null;
+}
+
+function applyModalSubmitShortcut(type, id) {
+    const content = document.getElementById('modal-content');
+    if (!content) {
+        return;
+    }
+
+    const action = getModalSubmitAction(type, id);
+    if (!action) {
+        content.onkeydown = null;
+        return;
+    }
+
+    content.onkeydown = (event) => {
+        if (event.key !== 'Enter' || event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) {
+            return;
+        }
+
+        const target = event.target;
+        const tagName = String(target?.tagName || '').toLowerCase();
+        const inputType = String(target?.type || '').toLowerCase();
+        if (tagName === 'textarea' || inputType === 'button' || inputType === 'submit' || inputType === 'file') {
+            return;
+        }
+
+        event.preventDefault();
+        action();
+    };
 }
 
 function openAdminLoginModal() {
@@ -130,6 +359,10 @@ function closeModal(force = false) {
     }
 
     document.getElementById('modal-container').classList.add('hidden');
+    const content = document.getElementById('modal-content');
+    if (content) {
+        content.onkeydown = null;
+    }
     state.currentEditingId = null;
     state.currentEditingType = null;
     state.tempModules = [];
@@ -215,6 +448,11 @@ function setUserListRoleFilter(role) {
     renderSmooth();
 }
 
+function setUserListActiveFilter(active) {
+    state.userListFilters.active = active || 'all';
+    renderSmooth();
+}
+
 function setUserListSort(sort) {
     state.userListFilters.sort = sort || 'name-asc';
     renderSmooth();
@@ -225,6 +463,7 @@ function clearUserListFilters() {
     state.userListFilters = {
         categoryId: 'all',
         role: 'all',
+        active: 'all',
         sort: 'name-asc',
     };
     renderSmooth();
@@ -274,8 +513,45 @@ function isUserCategoryDraftSaving(userId) {
     return Boolean(state.userCategoryDrafts[userId]?.saving);
 }
 
+function getUserCategoryDraftStats() {
+    let dirty = 0;
+    let saving = 0;
+
+    for (const draft of Object.values(state.userCategoryDrafts)) {
+        if (!draft) {
+            continue;
+        }
+        if (draft.saving) {
+            saving += 1;
+        }
+        if (!areCategorySetsEqual(draft.originalCategoryIds, draft.draftCategoryIds)) {
+            dirty += 1;
+        }
+    }
+
+    return { dirty, saving };
+}
+
+function isAnyUserCategoryDraftSaving() {
+    return getUserCategoryDraftStats().saving > 0;
+}
+
+function getDirtyUserCategoryDraftEntries(targetUserId = null) {
+    return Object.entries(state.userCategoryDrafts)
+        .filter(([userId, draft]) => {
+            if (!draft || draft.saving) {
+                return false;
+            }
+            if (targetUserId && userId !== targetUserId) {
+                return false;
+            }
+            return !areCategorySetsEqual(draft.originalCategoryIds, draft.draftCategoryIds);
+        })
+        .map(([userId, draft]) => ({ userId, draft }));
+}
+
 function toggleUserCategoryQuick(userId, categoryId) {
-    if (isPending('loadData') || isPending('importUsers') || isPending('deleteUser')) {
+    if (isPending('loadData') || isPending('importUsers') || isPending('deleteUser') || isAnyUserCategoryDraftSaving()) {
         return;
     }
 
@@ -298,74 +574,124 @@ function toggleUserCategoryQuick(userId, categoryId) {
 }
 
 function cancelUserCategoryQuickChanges(userId) {
-    const draft = state.userCategoryDrafts[userId];
-    if (!draft || draft.saving) {
+    if (isAnyUserCategoryDraftSaving()) {
         return;
     }
 
-    delete state.userCategoryDrafts[userId];
+    if (userId) {
+        const draft = state.userCategoryDrafts[userId];
+        if (!draft) {
+            return;
+        }
+        delete state.userCategoryDrafts[userId];
+    } else {
+        state.userCategoryDrafts = {};
+    }
+
     render();
 }
 
-async function saveUserCategoryQuickChanges(userId) {
-    const draft = state.userCategoryDrafts[userId];
-    if (!draft || draft.saving) {
-        return;
-    }
-
+async function persistSingleUserCategoryQuickDraft(userId, draft) {
     const user = state.users.find((item) => item.id === userId);
     if (!user) {
         delete state.userCategoryDrafts[userId];
-        return;
+        return false;
     }
 
     const targetCategoryIds = [...new Set(draft.draftCategoryIds)];
     if (areCategorySetsEqual(draft.originalCategoryIds, targetCategoryIds)) {
         delete state.userCategoryDrafts[userId];
+        return false;
+    }
+
+    ensureClient();
+
+    if (!user.externalId) {
+        user.externalId = `${normalizeComparisonKey(user.fullName || 'usuario') || 'usuario'}-${String(user.id || '').slice(0, 8) || Date.now().toString(36)}`;
+    }
+
+    if (state.rpcAvailability.saveCollaboratorWithCategories !== false) {
+        const { error } = await supabaseClient.rpc('save_collaborator_with_categories', {
+            p_collaborator_id: user.id,
+            p_external_id: user.externalId,
+            p_name: user.fullName,
+            p_role: user.role,
+            p_email: user.email || null,
+            p_category_ids: targetCategoryIds,
+        });
+
+        if (error) {
+            if (isRpcMissing(error, 'save_collaborator_with_categories')) {
+                state.rpcAvailability.saveCollaboratorWithCategories = false;
+                await syncUserCategories(user.id, draft.originalCategoryIds, targetCategoryIds);
+            } else {
+                throw error;
+            }
+        } else {
+            state.rpcAvailability.saveCollaboratorWithCategories = true;
+        }
+    } else {
+        await syncUserCategories(user.id, draft.originalCategoryIds, targetCategoryIds);
+    }
+
+    user.categoryIds = [...targetCategoryIds];
+    delete state.userCategoryDrafts[userId];
+    return true;
+}
+
+async function saveUserCategoryQuickChanges(userId) {
+    if (isPending('loadData') || isPending('importUsers') || isPending('deleteUser')) {
+        return;
+    }
+
+    const targetUserId = userId || null;
+    const draftEntries = getDirtyUserCategoryDraftEntries(targetUserId);
+    if (!draftEntries.length) {
+        if (!targetUserId) {
+            showToast('Não há alterações de categorias para salvar.', 'info');
+        }
         render();
         return;
     }
 
-    draft.saving = true;
+    for (const entry of draftEntries) {
+        entry.draft.saving = true;
+    }
     render();
 
-    try {
-        ensureClient();
+    let updatedCount = 0;
+    let failedCount = 0;
 
-        if (!user.externalId) {
-            user.externalId = `${normalizeComparisonKey(user.fullName || 'usuario') || 'usuario'}-${String(user.id || '').slice(0, 8) || Date.now().toString(36)}`;
-        }
-
-        if (state.rpcAvailability.saveCollaboratorWithCategories !== false) {
-            const { error } = await supabaseClient.rpc('save_collaborator_with_categories', {
-                p_collaborator_id: user.id,
-                p_external_id: user.externalId,
-                p_name: user.fullName,
-                p_role: user.role,
-                p_category_ids: targetCategoryIds,
-            });
-
-            if (error) {
-                if (isRpcMissing(error, 'save_collaborator_with_categories')) {
-                    state.rpcAvailability.saveCollaboratorWithCategories = false;
-                    await syncUserCategories(user.id, draft.originalCategoryIds, targetCategoryIds);
-                } else {
-                    throw error;
-                }
-            } else {
-                state.rpcAvailability.saveCollaboratorWithCategories = true;
+    for (const entry of draftEntries) {
+        try {
+            const updated = await persistSingleUserCategoryQuickDraft(entry.userId, entry.draft);
+            if (updated) {
+                updatedCount += 1;
             }
-        } else {
-            await syncUserCategories(user.id, draft.originalCategoryIds, targetCategoryIds);
+        } catch (error) {
+            failedCount += 1;
+            if (state.userCategoryDrafts[entry.userId]) {
+                state.userCategoryDrafts[entry.userId].saving = false;
+            }
+            if (targetUserId) {
+                showToast(toUserFriendlyError(error, 'Não foi possível atualizar as categorias do usuário.'), 'error');
+            } else {
+                console.error(`Falha ao atualizar categorias do usuário ${entry.userId}`, error);
+            }
         }
+    }
 
-        user.categoryIds = [...targetCategoryIds];
-        delete state.userCategoryDrafts[userId];
-    } catch (error) {
-        showToast(toUserFriendlyError(error, 'Não foi possível atualizar as categorias do usuário.'), 'error');
-    } finally {
-        if (state.userCategoryDrafts[userId]) {
-            state.userCategoryDrafts[userId].saving = false;
+    if (!targetUserId) {
+        if (failedCount) {
+            showToast(
+                `Alterações em categorias: ${updatedCount} usuário(s) salvo(s), ${failedCount} com erro.`,
+                'error'
+            );
+        } else if (updatedCount) {
+            showToast(
+                `${updatedCount} usuário(s) com categorias atualizados com sucesso.`,
+                'success'
+            );
         }
     }
 
@@ -470,6 +796,8 @@ async function loadAppData(options = {}) {
                 return {
                     id: collaborator.id,
                     externalId: collaborator.external_id,
+                    email: String(collaborator.email || '').trim().toLowerCase(),
+                    isActive: collaborator.is_active !== false,
                     role: normalizeRoleLabel(collaborator.role),
                     firstName: nameParts.firstName,
                     lastName: nameParts.lastName,
@@ -479,6 +807,7 @@ async function loadAppData(options = {}) {
                     completedModuleIds: completedByCollaborator[collaborator.id] || {},
                 };
             });
+            pruneUserBulkSelection();
             state.publicDataError = '';
             state.userCategoryDrafts = {};
             state.statusDraft = {};
@@ -499,6 +828,7 @@ async function loadAppData(options = {}) {
                 state.inlineModuleEditor = { categoryId: null, modules: [], editingIndex: null };
             }
 
+            await loadAdmins().catch(() => {});
             render();
         } catch (error) {
             const friendlyError = toUserFriendlyError(error, 'Não foi possível carregar os dados.');
@@ -537,6 +867,14 @@ async function login(event) {
             throw error;
         }
 
+        const { data: sessionData } = await supabaseClient.auth.getSession();
+        if (sessionData?.session) {
+            state.session = sessionData.session;
+            state.authReady = true;
+        }
+
+        await loadAppData({ showErrorToast: true });
+        await logPortalAuditEvent('admin_login_success', { email });
         state.activeTab = 'dashboard';
         closeModal(true);
         showToast('Login realizado com sucesso.');
@@ -545,6 +883,265 @@ async function login(event) {
     } finally {
         setPending('auth', false);
         setButtonLoading('login-submit-btn', false);
+    }
+}
+
+async function logPortalAuditEvent(eventName, payload = {}) {
+    try {
+        ensureClient();
+        await supabaseClient.rpc('log_portal_event', {
+            p_event: eventName,
+            p_payload: payload,
+        });
+    } catch (_error) {
+        // Best-effort event log. Never block UX on audit write failures.
+    }
+}
+
+async function requestPasswordReset() {
+    if (isPending('auth')) {
+        return;
+    }
+
+    const email = (document.getElementById('login-email')?.value || '').trim();
+    if (!email) {
+        showToast('Informe o e-mail para recuperar a senha.', 'info');
+        return;
+    }
+
+    setPending('auth', true);
+    try {
+        ensureClient();
+        const redirectTo = `${window.location.origin}${window.location.pathname}#recovery`;
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
+        if (error) {
+            throw error;
+        }
+
+        showToast('Enviamos o link de recuperação para seu e-mail.', 'success');
+    } catch (error) {
+        showToast(toUserFriendlyError(error, 'Não foi possível enviar o e-mail de recuperação.'), 'error');
+    } finally {
+        setPending('auth', false);
+    }
+}
+
+async function getSupabaseAuthSettings() {
+    try {
+        const config = window.SUPABASE_CONFIG || {};
+        if (!config.url || !config.anonKey) {
+            return null;
+        }
+
+        const response = await fetch(`${config.url}/auth/v1/settings`, {
+            method: 'GET',
+            headers: {
+                apikey: config.anonKey,
+                Authorization: `Bearer ${config.anonKey}`,
+            },
+        });
+
+        if (!response.ok) {
+            return null;
+        }
+
+        return await response.json();
+    } catch (_error) {
+        return null;
+    }
+}
+
+async function createAdminUserAccount() {
+    if (!isAdminSession()) {
+        showToast('Apenas administradores podem criar novos admins.', 'error');
+        return;
+    }
+
+    if (isPending('auth')) {
+        return;
+    }
+
+    const email = (document.getElementById('admin-create-email')?.value || '').trim();
+    const password = document.getElementById('admin-create-password')?.value || '';
+    const passwordConfirm = document.getElementById('admin-create-password-confirm')?.value || '';
+
+    if (!email) {
+        showToast('Informe o e-mail do novo admin.', 'error');
+        return;
+    }
+    if (password.length < 8) {
+        showToast('A senha precisa ter no mínimo 8 caracteres.', 'error');
+        return;
+    }
+    if (password !== passwordConfirm) {
+        showToast('A confirmação da senha não confere.', 'error');
+        return;
+    }
+
+    const currentSession = state.session
+        ? {
+            access_token: state.session.access_token,
+            refresh_token: state.session.refresh_token,
+            user_id: state.session.user?.id || null,
+        }
+        : null;
+
+    const loadingStartedAt = Date.now();
+    setPending('auth', true);
+    setButtonLoading('admin-create-save-btn', true, 'Criando...');
+    try {
+        ensureClient();
+        state.suppressAuthStateReactions = true;
+        const authSettings = await getSupabaseAuthSettings();
+        if (!authSettings) {
+            throw new Error('Não foi possível validar as configurações de autenticação do Supabase. Tente novamente.');
+        }
+        if (authSettings.mailer_autoconfirm !== true) {
+            throw new Error('Para criar o admin já ativo, desative "Confirm email" em Supabase > Authentication > Providers > Email.');
+        }
+
+        const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    role: 'admin',
+                    created_by: state.session?.user?.email || null,
+                },
+            },
+        });
+        if (error) {
+            throw error;
+        }
+        if (!data?.session) {
+            throw new Error('O Supabase ainda está exigindo confirmação por e-mail. Desative "Confirm email" e tente novamente.');
+        }
+
+        if (currentSession && data?.session && data.session.user?.id !== currentSession.user_id) {
+            const { error: restoreError } = await supabaseClient.auth.setSession({
+                access_token: currentSession.access_token,
+                refresh_token: currentSession.refresh_token,
+            });
+            if (restoreError) {
+                throw restoreError;
+            }
+        }
+
+        // Register in portal_admins table (best-effort)
+        try {
+            await supabaseClient.from('portal_admins').upsert({ email, created_by: state.session?.user?.email || null }, { onConflict: 'email' });
+        } catch (_e) {
+            // portal_admins table may not exist yet; non-blocking
+        }
+
+        await logPortalAuditEvent('admin_auth_account_created', {
+            email,
+            created_by: state.session?.user?.email || null,
+        });
+        closeModal(true);
+        await loadAdmins().catch(() => {});
+        render();
+        showToast('Usuário admin criado com sucesso.', 'success');
+    } catch (error) {
+        const message = error?.message
+            ? String(error.message)
+            : toUserFriendlyError(error, 'Não foi possível criar o usuário admin.');
+        showToast(message, 'error');
+    } finally {
+        state.suppressAuthStateReactions = false;
+        const elapsed = Date.now() - loadingStartedAt;
+        const minimumLoadingMs = 450;
+        if (elapsed < minimumLoadingMs) {
+            await new Promise((resolve) => window.setTimeout(resolve, minimumLoadingMs - elapsed));
+        }
+        setPending('auth', false);
+        setButtonLoading('admin-create-save-btn', false);
+    }
+}
+
+async function completePasswordRecovery() {
+    if (isPending('auth')) {
+        return;
+    }
+
+    const password = document.getElementById('recovery-password')?.value || '';
+    const passwordConfirm = document.getElementById('recovery-password-confirm')?.value || '';
+    if (password.length < 8) {
+        showToast('A senha precisa ter no mínimo 8 caracteres.', 'error');
+        return;
+    }
+    if (password !== passwordConfirm) {
+        showToast('A confirmação da senha não confere.', 'error');
+        return;
+    }
+
+    setPending('auth', true);
+    setButtonLoading('recovery-save-btn', true, 'Salvando...');
+    try {
+        ensureClient();
+        const { error } = await supabaseClient.auth.updateUser({ password });
+        if (error) {
+            throw error;
+        }
+
+        await logPortalAuditEvent('password_recovery_completed', {
+            user_id: state.session?.user?.id || null,
+        });
+        if (window.location.hash === '#recovery') {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+
+        closeModal(true);
+        showToast('Senha redefinida com sucesso.', 'success');
+    } catch (error) {
+        showToast(toUserFriendlyError(error, 'Não foi possível redefinir a senha.'), 'error');
+    } finally {
+        setPending('auth', false);
+        setButtonLoading('recovery-save-btn', false);
+    }
+}
+
+async function changeOwnPassword() {
+    if (!isAdminSession()) {
+        showToast('Faça login como admin para alterar a senha.', 'error');
+        return;
+    }
+
+    if (isPending('auth')) {
+        return;
+    }
+
+    const password = document.getElementById('change-password')?.value || '';
+    const passwordConfirm = document.getElementById('change-password-confirm')?.value || '';
+    if (password.length < 8) {
+        showToast('A senha precisa ter no mínimo 8 caracteres.', 'error');
+        return;
+    }
+    if (password !== passwordConfirm) {
+        showToast('A confirmação da senha não confere.', 'error');
+        return;
+    }
+
+    setPending('auth', true);
+    setButtonLoading('change-password-save-btn', true, 'Salvando...');
+    try {
+        ensureClient();
+        const { error } = await supabaseClient.auth.updateUser({ password });
+        if (error) {
+            throw error;
+        }
+
+        await logPortalAuditEvent('admin_changed_own_password', {
+            user_id: state.session?.user?.id || null,
+            email: state.session?.user?.email || null,
+        });
+        closeModal(true);
+        showToast('Senha alterada com sucesso.', 'success');
+    } catch (error) {
+        showToast(toUserFriendlyError(error, 'Não foi possível alterar a senha.'), 'error');
+    } finally {
+        setPending('auth', false);
+        setButtonLoading('change-password-save-btn', false);
     }
 }
 
@@ -580,5 +1177,3 @@ async function logout() {
         setPending('auth', false);
     }
 }
-
-
