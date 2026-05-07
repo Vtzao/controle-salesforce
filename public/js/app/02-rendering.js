@@ -392,16 +392,32 @@ function getStatusPieChartMarkup(items, total, options = {}) {
 
         const sliceAngle = (count / safeTotal) * 360;
         const endAngle = currentAngle + sliceAngle;
-        const path = describePieSlice(cx, cy, radius, currentAngle, endAngle);
+        const isFullCircle = sliceAngle >= 359.999;
+        const path = isFullCircle ? '' : describePieSlice(cx, cy, radius, currentAngle, endAngle);
         const percentage = (count / safeTotal) * 100;
         const midAngle = currentAngle + (sliceAngle / 2);
         const labelRadius = percentage < 8 ? radius * 0.78 : radius * 0.62;
-        const labelPoint = polarToCartesian(cx, cy, labelRadius, midAngle);
+        const labelPoint = isFullCircle
+            ? { x: cx, y: cy }
+            : polarToCartesian(cx, cy, labelRadius, midAngle);
         const textColor = getTextColorForSlice(item.color);
-        const labelFontSize = percentage < 8 ? 5.5 : 6.5;
+        const labelFontSize = isFullCircle
+            ? 10.5
+            : (percentage < 8 ? 5.5 : 6.5);
         const offsetDistance = 2.4;
         const offsetPoint = polarToCartesian(0, 0, offsetDistance, midAngle);
         const percentageLabel = formatStatusPercentage(count, safeTotal, { fractionDigits: 1 });
+        const sliceShapeMarkup = isFullCircle
+            ? `
+                <circle class="dashboard-pie-slice-path" cx="${cx}" cy="${cy}" r="${radius}" fill="${item.color}" stroke="#f8fafc" stroke-width="1.4">
+                    <title>${escapeHtml(item.label)}: ${count} (${percentageLabel})</title>
+                </circle>
+            `
+            : `
+                <path class="dashboard-pie-slice-path" d="${path}" fill="${item.color}" stroke="#f8fafc" stroke-width="1.4">
+                    <title>${escapeHtml(item.label)}: ${count} (${percentageLabel})</title>
+                </path>
+            `;
 
         sliceMarkup.push(`
             <g
@@ -419,9 +435,7 @@ function getStatusPieChartMarkup(items, total, options = {}) {
                 role="button"
                 aria-label="${escapeAttr(`${item.label}: ${count} registros (${percentageLabel})`)}"
             >
-                <path class="dashboard-pie-slice-path" d="${path}" fill="${item.color}" stroke="#f8fafc" stroke-width="1.4">
-                    <title>${escapeHtml(item.label)}: ${count} (${percentageLabel})</title>
-                </path>
+                ${sliceShapeMarkup}
                 <text
                     class="dashboard-pie-slice-label"
                     x="${labelPoint.x.toFixed(3)}"
