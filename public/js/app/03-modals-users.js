@@ -610,9 +610,9 @@ async function persistSingleUserCategoryQuickDraft(userId, draft) {
         user.externalId = `${normalizeComparisonKey(user.fullName || 'usuario') || 'usuario'}-${String(user.id || '').slice(0, 8) || Date.now().toString(36)}`;
     }
 
-    if (state.rpcAvailability.saveCollaboratorWithCategories !== false) {
-        const { error } = await supabaseClient.rpc('save_collaborator_with_categories', {
-            p_collaborator_id: user.id,
+    if (state.rpcAvailability.saveTrainingUserWithCategories !== false) {
+        const { error } = await supabaseClient.rpc(TRAINING_DB.saveUserRpc, {
+            [TRAINING_DB.saveUserRpcIdParam]: user.id,
             p_external_id: user.externalId,
             p_name: user.fullName,
             p_role: user.role,
@@ -621,14 +621,14 @@ async function persistSingleUserCategoryQuickDraft(userId, draft) {
         });
 
         if (error) {
-            if (isRpcMissing(error, 'save_collaborator_with_categories')) {
-                state.rpcAvailability.saveCollaboratorWithCategories = false;
+            if (isRpcMissing(error, TRAINING_DB.saveUserRpc)) {
+                state.rpcAvailability.saveTrainingUserWithCategories = false;
                 await syncUserCategories(user.id, draft.originalCategoryIds, targetCategoryIds);
             } else {
                 throw error;
             }
         } else {
-            state.rpcAvailability.saveCollaboratorWithCategories = true;
+            state.rpcAvailability.saveTrainingUserWithCategories = true;
         }
     } else {
         await syncUserCategories(user.id, draft.originalCategoryIds, targetCategoryIds);
@@ -711,16 +711,16 @@ async function loadAppData(options = {}) {
             const [
                 categoriesResponse,
                 modulesResponse,
-                collaboratorsResponse,
-                collaboratorCategoriesResponse,
+                trainingUsersResponse,
+                trainingUserCategoriesResponse,
                 statusResponse,
             ] = await withTimeout(
                 Promise.all([
                     supabaseClient.from('categories').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: true }),
                     supabaseClient.from('modules').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: true }),
-                    supabaseClient.from('collaborators').select('*').order('name', { ascending: true }),
-                    supabaseClient.from('collaborator_categories').select('*'),
-                    supabaseClient.from('collaborator_module_status').select('*'),
+                    supabaseClient.from(TRAINING_DB.usersTable).select('*').order('name', { ascending: true }),
+                    supabaseClient.from(TRAINING_DB.userCategoriesTable).select('*'),
+                    supabaseClient.from(TRAINING_DB.userStatusesTable).select('*'),
                 ]),
                 15000,
                 'Tempo limite atingido ao sincronizar os dados.'
@@ -729,8 +729,8 @@ async function loadAppData(options = {}) {
             const errors = [
                 categoriesResponse.error,
                 modulesResponse.error,
-                collaboratorsResponse.error,
-                collaboratorCategoriesResponse.error,
+                trainingUsersResponse.error,
+                trainingUserCategoriesResponse.error,
                 statusResponse.error,
             ].filter(Boolean);
 
@@ -751,19 +751,20 @@ async function loadAppData(options = {}) {
                 modules: modulesByCategoryId[category.id] || [],
             }));
 
-            const categoryIdsByCollaborator = {};
-            for (const row of collaboratorCategoriesResponse.data || []) {
-                if (!categoryIdsByCollaborator[row.collaborator_id]) {
-                    categoryIdsByCollaborator[row.collaborator_id] = [];
+            const categoryIdsByUser = {};
+            for (const row of trainingUserCategoriesResponse.data || []) {
+                const userId = row[TRAINING_DB.userForeignKey];
+                if (!categoryIdsByUser[userId]) {
+                    categoryIdsByUser[userId] = [];
                 }
-                categoryIdsByCollaborator[row.collaborator_id].push(row.category_id);
+                categoryIdsByUser[userId].push(row.category_id);
             }
 
             const moduleById = Object.fromEntries(
                 (modulesResponse.data || []).map((module) => [module.id, module])
             );
-            const statusByCollaborator = {};
-            const completedByCollaborator = {};
+            const statusByUser = {};
+            const completedByUser = {};
 
             for (const row of statusResponse.data || []) {
                 const module = moduleById[row.module_id];
@@ -771,40 +772,41 @@ async function loadAppData(options = {}) {
                     continue;
                 }
                 const normalizedStatus = normalizeModuleStatus(row.status);
+                const userId = row[TRAINING_DB.userForeignKey];
 
-                if (!statusByCollaborator[row.collaborator_id]) {
-                    statusByCollaborator[row.collaborator_id] = {};
+                if (!statusByUser[userId]) {
+                    statusByUser[userId] = {};
                 }
-                statusByCollaborator[row.collaborator_id][module.id] = normalizedStatus;
+                statusByUser[userId][module.id] = normalizedStatus;
 
                 if (normalizedStatus !== MODULE_STATUS.COMPLETED) {
                     continue;
                 }
 
-                if (!completedByCollaborator[row.collaborator_id]) {
-                    completedByCollaborator[row.collaborator_id] = {};
+                if (!completedByUser[userId]) {
+                    completedByUser[userId] = {};
                 }
-                if (!completedByCollaborator[row.collaborator_id][module.category_id]) {
-                    completedByCollaborator[row.collaborator_id][module.category_id] = [];
+                if (!completedByUser[userId][module.category_id]) {
+                    completedByUser[userId][module.category_id] = [];
                 }
 
-                completedByCollaborator[row.collaborator_id][module.category_id].push(module.id);
+                completedByUser[userId][module.category_id].push(module.id);
             }
 
-            state.users = (collaboratorsResponse.data || []).map((collaborator) => {
-                const nameParts = splitName(collaborator.name);
+            state.users = (trainingUsersResponse.data || []).map((trainingUser) => {
+                const nameParts = splitName(trainingUser.name);
                 return {
-                    id: collaborator.id,
-                    externalId: collaborator.external_id,
-                    email: String(collaborator.email || '').trim().toLowerCase(),
-                    isActive: collaborator.is_active !== false,
-                    role: normalizeRoleLabel(collaborator.role),
+                    id: trainingUser.id,
+                    externalId: trainingUser.external_id,
+                    email: String(trainingUser.email || '').trim().toLowerCase(),
+                    isActive: trainingUser.is_active !== false,
+                    role: normalizeRoleLabel(trainingUser.role),
                     firstName: nameParts.firstName,
                     lastName: nameParts.lastName,
-                    fullName: collaborator.name,
-                    categoryIds: categoryIdsByCollaborator[collaborator.id] || [],
-                    moduleStatuses: statusByCollaborator[collaborator.id] || {},
-                    completedModuleIds: completedByCollaborator[collaborator.id] || {},
+                    fullName: trainingUser.name,
+                    categoryIds: categoryIdsByUser[trainingUser.id] || [],
+                    moduleStatuses: statusByUser[trainingUser.id] || {},
+                    completedModuleIds: completedByUser[trainingUser.id] || {},
                 };
             });
             pruneUserBulkSelection();

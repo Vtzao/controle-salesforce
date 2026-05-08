@@ -358,9 +358,9 @@ async function syncUserCategories(userId, previousCategoryIds, nextCategoryIds) 
 
     if (toInsert.length) {
         const { error } = await supabaseClient
-            .from('collaborator_categories')
+            .from(TRAINING_DB.userCategoriesTable)
             .insert(toInsert.map((categoryId) => ({
-                collaborator_id: userId,
+                [TRAINING_DB.userForeignKey]: userId,
                 category_id: categoryId,
             })));
 
@@ -371,9 +371,9 @@ async function syncUserCategories(userId, previousCategoryIds, nextCategoryIds) 
 
     if (toDelete.length) {
         const { error } = await supabaseClient
-            .from('collaborator_categories')
+            .from(TRAINING_DB.userCategoriesTable)
             .delete()
-            .eq('collaborator_id', userId)
+            .eq(TRAINING_DB.userForeignKey, userId)
             .in('category_id', toDelete);
 
         if (error) {
@@ -386,9 +386,9 @@ async function syncUserCategories(userId, previousCategoryIds, nextCategoryIds) 
 
         if (moduleIdsToDelete.length) {
             const { error } = await supabaseClient
-                .from('collaborator_module_status')
+                .from(TRAINING_DB.userStatusesTable)
                 .delete()
-                .eq('collaborator_id', userId)
+                .eq(TRAINING_DB.userForeignKey, userId)
                 .in('module_id', moduleIdsToDelete);
 
             if (error) {
@@ -403,7 +403,7 @@ async function saveUserLegacy(existingUser, basePayload, categoryIds) {
 
     if (existingUser) {
         const { error } = await supabaseClient
-            .from('collaborators')
+            .from(TRAINING_DB.usersTable)
             .update(basePayload)
             .eq('id', existingUser.id);
 
@@ -412,7 +412,7 @@ async function saveUserLegacy(existingUser, basePayload, categoryIds) {
         }
     } else {
         const { data, error } = await supabaseClient
-            .from('collaborators')
+            .from(TRAINING_DB.usersTable)
             .insert(basePayload)
             .select()
             .single();
@@ -632,9 +632,9 @@ async function saveUser() {
             email,
         };
 
-        if (state.rpcAvailability.saveCollaboratorWithCategories !== false) {
-            const { error } = await supabaseClient.rpc('save_collaborator_with_categories', {
-                p_collaborator_id: existingUser?.id || null,
+        if (state.rpcAvailability.saveTrainingUserWithCategories !== false) {
+            const { error } = await supabaseClient.rpc(TRAINING_DB.saveUserRpc, {
+                [TRAINING_DB.saveUserRpcIdParam]: existingUser?.id || null,
                 p_external_id: basePayload.external_id,
                 p_name: basePayload.name,
                 p_role: basePayload.role,
@@ -643,14 +643,14 @@ async function saveUser() {
             });
 
             if (error) {
-                if (isRpcMissing(error, 'save_collaborator_with_categories')) {
-                    state.rpcAvailability.saveCollaboratorWithCategories = false;
+                if (isRpcMissing(error, TRAINING_DB.saveUserRpc)) {
+                    state.rpcAvailability.saveTrainingUserWithCategories = false;
                     await saveUserLegacy(existingUser, basePayload, categoryIds);
                 } else {
                     throw error;
                 }
             } else {
-                state.rpcAvailability.saveCollaboratorWithCategories = true;
+                state.rpcAvailability.saveTrainingUserWithCategories = true;
             }
         } else {
             await saveUserLegacy(existingUser, basePayload, categoryIds);
@@ -701,7 +701,7 @@ async function normalizeAllUserRoles() {
 
         for (const item of updates) {
             const { error } = await supabaseClient
-                .from('collaborators')
+                .from(TRAINING_DB.usersTable)
                 .update({ role: item.normalized })
                 .eq('id', item.id);
 
@@ -730,7 +730,7 @@ function downloadUsersCsvTemplate() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'modelo-importacao-colaboradores.csv';
+    link.download = 'modelo-importacao-usuarios-treinamento.csv';
     link.click();
     URL.revokeObjectURL(url);
 }
@@ -868,11 +868,6 @@ async function importUsersFromCsvFile(file) {
             .map((name, index) => ({ name: String(name || '').trim(), index: index + 4 }))
             .filter((column) => column.name);
 
-        if (!csvCategoryColumns.length) {
-            showToast('Inclua pelo menos uma coluna de categoria no CSV.', 'error');
-            return;
-        }
-
         const categoriesByKey = new Map(
             state.categories.map((category) => [normalizeComparisonKey(category.name), category])
         );
@@ -937,9 +932,9 @@ async function importUsersFromCsvFile(file) {
             };
 
             try {
-                if (state.rpcAvailability.saveCollaboratorWithCategories !== false) {
-                    const { error } = await supabaseClient.rpc('save_collaborator_with_categories', {
-                        p_collaborator_id: existingUser?.id || null,
+                if (state.rpcAvailability.saveTrainingUserWithCategories !== false) {
+                    const { error } = await supabaseClient.rpc(TRAINING_DB.saveUserRpc, {
+                        [TRAINING_DB.saveUserRpcIdParam]: existingUser?.id || null,
                         p_external_id: basePayload.external_id,
                         p_name: basePayload.name,
                         p_role: basePayload.role,
@@ -948,14 +943,14 @@ async function importUsersFromCsvFile(file) {
                     });
 
                     if (error) {
-                        if (isRpcMissing(error, 'save_collaborator_with_categories')) {
-                            state.rpcAvailability.saveCollaboratorWithCategories = false;
+                        if (isRpcMissing(error, TRAINING_DB.saveUserRpc)) {
+                            state.rpcAvailability.saveTrainingUserWithCategories = false;
                             await saveUserLegacy(existingUser, basePayload, categoryIds);
                         } else {
                             throw error;
                         }
                     } else {
-                        state.rpcAvailability.saveCollaboratorWithCategories = true;
+                        state.rpcAvailability.saveTrainingUserWithCategories = true;
                     }
                 } else {
                     await saveUserLegacy(existingUser, basePayload, categoryIds);
@@ -984,7 +979,7 @@ async function importUsersFromCsvFile(file) {
             failed ? 'error' : 'success'
         );
     } catch (error) {
-        showToast(toUserFriendlyError(error, 'Não foi possível importar o CSV de colaboradores.'), 'error');
+        showToast(toUserFriendlyError(error, 'Não foi possível importar o CSV de usuários de treinamento.'), 'error');
     } finally {
         setPending('importUsers', false);
     }
@@ -1012,7 +1007,7 @@ async function deleteUser(id) {
     try {
         ensureClient();
         const { error } = await supabaseClient
-            .from('collaborators')
+            .from(TRAINING_DB.usersTable)
             .delete()
             .eq('id', id);
 
@@ -1058,7 +1053,7 @@ async function toggleUserActive(id) {
     try {
         ensureClient();
         const { error } = await supabaseClient
-            .from('collaborators')
+            .from(TRAINING_DB.usersTable)
             .update({ is_active: nextIsActive })
             .eq('id', id);
 
@@ -1209,7 +1204,7 @@ async function inactivateSelectedUsers() {
         ensureClient();
         const activeIds = activeUsers.map((user) => user.id);
         const { error } = await supabaseClient
-            .from('collaborators')
+            .from(TRAINING_DB.usersTable)
             .update({ is_active: false })
             .in('id', activeIds);
 
@@ -1263,7 +1258,7 @@ async function deleteSelectedUsers() {
         ensureClient();
         const selectedIds = selectedUsers.map((user) => user.id);
         const { error } = await supabaseClient
-            .from('collaborators')
+            .from(TRAINING_DB.usersTable)
             .delete()
             .in('id', selectedIds);
 
@@ -1524,17 +1519,17 @@ async function saveStatusChanges() {
     try {
         ensureClient();
         const rows = entries.map(([key, status]) => {
-            const [collaborator_id, _categoryId, module_id] = key.split('::');
+            const [training_user_id, _categoryId, module_id] = key.split('::');
             return {
-                collaborator_id,
+                [TRAINING_DB.userForeignKey]: training_user_id,
                 module_id,
                 status: normalizeModuleStatus(status),
             };
         });
 
         const { error } = await supabaseClient
-            .from('collaborator_module_status')
-            .upsert(rows, { onConflict: 'collaborator_id,module_id' });
+            .from(TRAINING_DB.userStatusesTable)
+            .upsert(rows, { onConflict: `${TRAINING_DB.userForeignKey},module_id` });
 
         if (error) {
             throw error;

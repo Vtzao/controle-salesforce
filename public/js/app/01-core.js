@@ -77,7 +77,7 @@ const state = {
     },
     rpcAvailability: {
         saveCategoryWithModules: null,
-        saveCollaboratorWithCategories: null,
+        saveTrainingUserWithCategories: null,
     },
     statusDraft: {},
     selectedStatusCells: {},
@@ -117,6 +117,15 @@ const MODULE_STATUS = Object.freeze({
     COMPLETED: 'Concluído',
     SCHEDULED: 'Agendado',
     NOT_PARTICIPATING: 'Não se aplica',
+});
+
+const TRAINING_DB = Object.freeze({
+    usersTable: 'training_users',
+    userCategoriesTable: 'training_user_categories',
+    userStatusesTable: 'training_user_module_status',
+    userForeignKey: 'training_user_id',
+    saveUserRpc: 'save_training_user_with_categories',
+    saveUserRpcIdParam: 'p_training_user_id',
 });
 
 const MODULE_STATUS_VISUAL = Object.freeze({
@@ -309,16 +318,35 @@ function toUserFriendlyError(error, fallback) {
         return 'Existe módulo repetido nessa categoria. Ajuste os nomes.';
     }
 
-    if (code === '23505' && (message.includes('collaborators_external_id_key') || detail.includes('collaborators_external_id_key'))) {
+    if (code === '23505' && (
+        message.includes('collaborators_external_id_key')
+        || detail.includes('collaborators_external_id_key')
+        || message.includes('training_users_external_id_key')
+        || detail.includes('training_users_external_id_key')
+    )) {
         return 'O ID externo do usuário já está em uso.';
+    }
+
+    if (code === '23505' && (
+        message.includes('collaborators_email_unique')
+        || detail.includes('collaborators_email_unique')
+        || message.includes('training_users_email_unique')
+        || detail.includes('training_users_email_unique')
+    )) {
+        return 'Já existe um usuário com esse e-mail.';
     }
 
     if (code === '23505' && (message.includes('portal_admins_email_key') || detail.includes('portal_admins_email_key'))) {
         return 'Já existe um admin com esse e-mail.';
     }
 
-    if (code === '23514' && (message.includes('collaborator_module_status_status_check') || detail.includes('collaborator_module_status_status_check'))) {
-        return 'Seu schema do Supabase ainda não aceita o status "Agendado". Atualize o SQL da tabela collaborator_module_status.';
+    if (code === '23514' && (
+        message.includes('collaborator_module_status_status_check')
+        || detail.includes('collaborator_module_status_status_check')
+        || message.includes('training_user_module_status_status_check')
+        || detail.includes('training_user_module_status_status_check')
+    )) {
+        return 'Seu schema do Supabase ainda não aceita o status "Agendado". Atualize o SQL da tabela training_user_module_status.';
     }
 
     if (message.includes('user already registered')) {
